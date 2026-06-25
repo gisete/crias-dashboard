@@ -52,7 +52,7 @@ export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Pro
       <td className="py-6 px-6 font-medium text-gray-900">{childrenLabel}</td>
 
       {/* 3. Idade */}
-      <td className="py-6 px-6 text-gray-500 text-body-md">{ageLabel}</td>
+      <td className="py-6 px-6 text-gray-500 text-body-md whitespace-nowrap">{ageLabel}</td>
 
       {/* 4. Responsável — plain text, no avatar */}
       <td className="py-6 px-6 text-gray-600">{parentLabel}</td>
