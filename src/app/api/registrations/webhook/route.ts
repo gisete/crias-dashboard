@@ -4,6 +4,17 @@ import { parsePlan } from '@/lib/plan-parser';
 import type { WebhookPayload } from '@/types/webhook';
 import { MONTH_TO_NUMBER } from '@/lib/months';
 
+function normalizeStringArray(value: string[] | string | null | undefined): string[] {
+  if (!value) return [];
+  if (typeof value === 'string') {
+    return value.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  return value
+    .flatMap((s) => (typeof s === 'string' ? s.split(',') : []))
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 async function resolveMonthId(
   supabase: ReturnType<typeof createServerClient>,
   mes: string | null,
@@ -98,15 +109,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error', message: 'responsavel_email is required' }, { status: 400 });
   }
 
-  if (typeof body.datas_selecionadas === 'string' || Array.isArray(body.datas_selecionadas)) {
-    const raw = Array.isArray(body.datas_selecionadas)
-      ? body.datas_selecionadas
-      : [body.datas_selecionadas as string];
-    body.datas_selecionadas = raw
-      .flatMap((s) => (typeof s === 'string' ? s.split(',') : [s]))
-      .map((s) => (typeof s === 'string' ? s.trim() : s))
-      .filter(Boolean);
-  }
+  body.datas_selecionadas = normalizeStringArray(body.datas_selecionadas);
 
   try {
     const supabase = createServerClient();
@@ -135,11 +138,12 @@ export async function POST(request: NextRequest) {
       findOrCreateFamily(supabase, body),
     ]);
 
-    const children = [
-      { name: body.crianca_1_nome, dob: body.crianca_1_nascimento },
-      { name: body.crianca_2_nome, dob: body.crianca_2_nascimento },
-      { name: body.crianca_3_nome, dob: body.crianca_3_nascimento },
-    ].filter((c): c is { name: string; dob: string | null } => Boolean(c.name));
+    const names = normalizeStringArray(body.criancas_nomes);
+    const dobs = normalizeStringArray(body.criancas_nascimentos);
+    const children = names.map((name, i) => ({
+      name,
+      dob: dobs[i] || null,
+    }));
 
     const parsed = body.plano ? parsePlan(body.plano) : null;
 
