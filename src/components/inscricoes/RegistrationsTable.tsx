@@ -77,8 +77,8 @@ export function RegistrationsTable({
               <th className={TH}>Responsável</th>
               <th className={TH}>Plano</th>
               <th className={TH}>Valor</th>
-              <th className={TH}>Fatura</th>
-              <th className={TH}>Voucher</th>
+              <th className={TH}>F.</th>
+              <th className={TH}>V.</th>
               <th className={`${TH} w-10`} />
             </tr>
           </thead>
