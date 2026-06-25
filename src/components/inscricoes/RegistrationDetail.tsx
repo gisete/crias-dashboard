@@ -7,6 +7,7 @@ import type { RegistrationWithDetails, RegistrationStatus } from '@/types/databa
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
 import { updateRegistration, updateRegistrationStatus, deleteRegistration } from '@/lib/data/registrations';
+import { parsePlan } from '@/lib/plan-parser';
 import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
 import { WebhookErrorBanner } from './WebhookErrorBanner';
@@ -70,6 +71,26 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     onUpdate(reg.id, { [fieldName]: value });
   }
 
+  async function handlePlanSave(_fieldName: string, value: string) {
+    const parsed = parsePlan(value);
+    const totalPrice = parsed.unitPrice * reg.num_children;
+    const updates = {
+      plan: value,
+      unit_price: parsed.unitPrice,
+      num_sessions: parsed.numSessions,
+      has_photos: parsed.hasPhotos,
+      total_price: totalPrice,
+    };
+    await updateRegistration(reg.id, updates);
+    onUpdate(reg.id, updates);
+  }
+
+  async function handleDatesSave(_fieldName: string, value: string) {
+    const dates = value.split(',').map((s) => s.trim()).filter(Boolean);
+    await updateRegistration(reg.id, { selected_dates: dates });
+    onUpdate(reg.id, { selected_dates: dates });
+  }
+
   async function handleStatusChange(newStatus: RegistrationStatus) {
     await updateRegistrationStatus(reg.id, newStatus);
     onStatusChange(reg.id, newStatus);
@@ -93,7 +114,6 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     setDeleting(false);
     if (result.success) {
       setShowModal(false);
-      // Realtime subscription triggers table refresh automatically
     } else {
       setShowModal(false);
       setDeleteError('Erro ao eliminar. Tente novamente.');
@@ -114,7 +134,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               />
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-              {/* Left — Status, Contact & Plan */}
+              {/* Left — Estado, Contacto & Crianças */}
               <div className="flex flex-col gap-10">
                 <div>
                   <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Estado</h4>
@@ -154,7 +174,6 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 </div>
 
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Contacto</h4>
                   <p className="text-title-lg text-gray-900 mb-2">{family.parent_name}</p>
                   <a
                     href={`mailto:${family.email}`}
@@ -172,18 +191,76 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 </div>
 
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Resumo do Plano</h4>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-title-lg text-gray-900">{reg.plan.split('(')[0].trim()}</span>
-                    <span className="text-title-lg text-gray-900">{reg.total_price}€</span>
+                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Crianças</h4>
+                  <div className="flex flex-col gap-4">
+                    {children.map((child) => (
+                      <div key={child.id} className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-gray-600 text-title-lg font-semibold shrink-0">
+                          {child.name.charAt(0)}
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-title-lg text-gray-900">{child.name}</span>
+                          {child.date_of_birth && (
+                            <>
+                              <span className="text-body-md text-gray-600">
+                                {calculateAge(child.date_of_birth)}
+                              </span>
+                              <span className="text-label-md text-on-surface-variant">
+                                {formatDate(child.date_of_birth)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <span className="text-body-md text-gray-600">
-                    {reg.num_children === 1 ? '1 Criança' : `${reg.num_children} Crianças`}
-                  </span>
                 </div>
               </div>
 
-              {/* Middle — Admin Details */}
+              {/* Middle — Plano & Sessões */}
+              <div className="flex flex-col gap-10">
+                <div>
+                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Resumo do Plano</h4>
+                  <div className="flex flex-col gap-3">
+                    <InlineEditField
+                      label="Plano"
+                      value={reg.plan}
+                      fieldName="plan"
+                      onSave={handlePlanSave}
+                    />
+                    <div className="flex items-center gap-4">
+                      <span className="text-title-lg text-gray-900">{reg.total_price}€</span>
+                      <span className="text-body-md text-gray-600">
+                        {reg.num_children === 1 ? '1 Criança' : `${reg.num_children} Crianças`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Sessões Agendadas</h4>
+                  {reg.selected_dates.length > 0 && (
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      {reg.selected_dates.map((date) => (
+                        <span
+                          key={date}
+                          className="px-4 py-2 rounded-full bg-surface-container text-label-sm text-gray-900"
+                        >
+                          {date}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <InlineEditField
+                    label="Datas"
+                    value={reg.selected_dates.join(', ')}
+                    fieldName="selected_dates"
+                    onSave={handleDatesSave}
+                  />
+                </div>
+              </div>
+
+              {/* Right — Detalhes Administrativos & Notas */}
               <div className="flex flex-col gap-10">
                 <div>
                   <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">
@@ -226,69 +303,23 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                   />
                 </div>
               </div>
-
-              {/* Right — Children, Sessions & Actions */}
-              <div className="flex flex-col gap-10">
-                <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Crianças</h4>
-                  <div className="flex flex-col gap-4">
-                    {children.map((child) => (
-                      <div key={child.id} className="flex items-center gap-5">
-                        <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-gray-600 text-title-lg font-semibold shrink-0">
-                          {child.name.charAt(0)}
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-title-lg text-gray-900">{child.name}</span>
-                          {child.date_of_birth && (
-                            <>
-                              <span className="text-body-md text-gray-600">
-                                {calculateAge(child.date_of_birth)}
-                              </span>
-                              <span className="text-label-md text-on-surface-variant">
-                                {formatDate(child.date_of_birth)}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {reg.selected_dates.length > 0 && (
-                  <div>
-                    <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">
-                      Sessões Agendadas
-                    </h4>
-                    <div className="flex flex-wrap gap-3">
-                      {reg.selected_dates.map((date) => (
-                        <span
-                          key={date}
-                          className="px-4 py-2 rounded-full bg-surface-container text-label-sm text-gray-900"
-                        >
-                          {date}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <StatusActions status={reg.status} onAction={handleStatusChange} />
-              </div>
             </div>
 
-            {/* Delete action */}
-            <div className="mt-8 pt-6 border-t border-surface-container-highest flex flex-col items-end gap-2">
-              <button
-                onClick={() => { setDeleteError(null); setShowModal(true); }}
-                className="flex items-center gap-1.5 text-label-md text-red-300 hover:text-red-500 transition-colors"
-              >
-                <Trash size={14} />
-                Eliminar inscrição
-              </button>
-              {deleteError && (
-                <p className="text-label-sm text-red-500">{deleteError}</p>
-              )}
+            {/* Footer row */}
+            <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => { setDeleteError(null); setShowModal(true); }}
+                  className="flex items-center gap-1.5 text-label-md text-red-300 hover:text-red-500 transition-colors"
+                >
+                  <Trash size={14} />
+                  Eliminar inscrição
+                </button>
+                {deleteError && (
+                  <p className="text-label-sm text-red-500">{deleteError}</p>
+                )}
+              </div>
+              <StatusActions status={reg.status} onAction={handleStatusChange} />
             </div>
           </div>
         </td>

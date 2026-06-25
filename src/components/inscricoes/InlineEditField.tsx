@@ -90,10 +90,8 @@ export function InlineEditField({ label, value, fieldName, type = 'text', option
     >
       <div className="flex flex-col gap-1">
         <span className="text-label-sm text-gray-500">{label}</span>
-        {displayValue ? (
+        {displayValue && (
           <span className="text-body-lg font-medium text-gray-900">{displayValue}</span>
-        ) : (
-          <span className="text-body-lg text-gray-500 italic">Nenhum</span>
         )}
       </div>
       <PencilSimple
