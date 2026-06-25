@@ -3,7 +3,6 @@ import { createServerClient } from '@/lib/supabase/server';
 import { parsePlan } from '@/lib/plan-parser';
 import type { WebhookPayload } from '@/types/webhook';
 import { MONTH_TO_NUMBER } from '@/lib/months';
-import { mapConsent } from '@/lib/consent-utils';
 
 async function resolveMonthId(
   supabase: ReturnType<typeof createServerClient>,
@@ -161,7 +160,7 @@ export async function POST(request: NextRequest) {
         total_price: parsed?.unitPrice ?? 0,
         has_photos: parsed?.hasPhotos ?? false,
         selected_dates: body.datas_selecionadas ?? [],
-        image_consent: mapConsent(body.consentimento),
+        image_consent: body.consentimento ?? null,
         nif: body.nif ?? null,
         voucher_code: body.voucher ?? null,
         notes: body.notas ?? null,

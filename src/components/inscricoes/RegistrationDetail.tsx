@@ -18,7 +18,7 @@ interface Props {
   onStatusChange: (id: string, newStatus: RegistrationStatus) => void;
 }
 
-const IMAGE_CONSENT_OPTIONS = ['Sim, autorizo', 'Não autorizo', 'Apenas para uso interno'];
+const IMAGE_CONSENT_OPTIONS = ['Sim, autorizo', 'Autorizo, mas o rosto não é exposto', 'Não'];
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-');
@@ -111,7 +111,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               {/* Left — Estado, Contacto & Crianças */}
               <div className="flex flex-col gap-10">
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Estado</h4>
+                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">Estado</h4>
                   <div ref={statusRef} className="relative">
                     <button
                       onClick={() => setStatusOpen((o) => !o)}
@@ -148,7 +148,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 </div>
 
                 <div>
-                  <p className="text-title-lg text-gray-900 mb-2">{family.parent_name}</p>
+                  <p className="text-body-lg text-gray-900 mb-2">{family.parent_name}</p>
                   <a
                     href={`mailto:${family.email}`}
                     className="flex items-center gap-3 text-gray-600 hover:text-gray-900 hover:underline text-body-md mb-2 transition-colors"
@@ -165,7 +165,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 </div>
 
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Crianças</h4>
+                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">Crianças</h4>
                   <div className="flex flex-col gap-4">
                     {children.map((child) => (
                       <div key={child.id} className="flex items-center gap-5">
@@ -173,7 +173,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                           {child.name.charAt(0)}
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-title-lg text-gray-900">{child.name}</span>
+                          <span className="text-body-lg text-gray-900">{child.name}</span>
                           {child.date_of_birth && (
                             <>
                               <span className="text-body-md text-gray-600">
@@ -194,10 +194,10 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               {/* Middle — Plano & Sessões */}
               <div className="flex flex-col gap-10">
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Resumo do Plano</h4>
+                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">Inscrição</h4>
                   <div className="flex flex-col gap-3">
                     <InlineEditField
-                      label="Plano"
+                      label="Escolha"
                       value={reg.plan}
                       fieldName="plan"
                       onSave={handlePlanSave}
@@ -213,7 +213,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
 
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-label-sm text-gray-500 uppercase tracking-wider">Sessões Agendadas</h4>
+                    <h4 className="text-label-sm text-gray-400 uppercase tracking-wider">Sessões Agendadas</h4>
                     {!editingDates && (
                       <button
                         onClick={() => { setDatesDraft(reg.selected_dates.join(', ')); setEditingDates(true); }}
@@ -263,7 +263,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               {/* Right — Detalhes Administrativos & Notas */}
               <div className="flex flex-col gap-10">
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">
+                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">
                     Detalhes Administrativos
                   </h4>
                   <div className="flex flex-col gap-6">
@@ -291,7 +291,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 </div>
 
                 <div>
-                  <span className="text-label-sm text-gray-500 block mb-2 tracking-wider uppercase">
+                  <span className="text-label-sm text-gray-400 block mb-2 tracking-wider uppercase">
                     Notas Internas
                   </span>
                   <InlineEditField
