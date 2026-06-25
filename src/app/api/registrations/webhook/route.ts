@@ -108,6 +108,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error', message: 'responsavel_email is required' }, { status: 400 });
   }
 
+  if (typeof body.datas_selecionadas === 'string') {
+    body.datas_selecionadas = (body.datas_selecionadas as string)
+      .split(', ')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
   try {
     const supabase = createServerClient();
 

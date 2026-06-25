@@ -13,7 +13,7 @@ export interface WebhookPayload {
   crianca_3_nome: string | null;
   crianca_3_nascimento: string | null;
   plano: string | null;
-  datas_selecionadas: string[] | null;
+  datas_selecionadas: string[] | string | null;
   consentimento: string | null;
   nif: string | null;
   voucher: string | null;
