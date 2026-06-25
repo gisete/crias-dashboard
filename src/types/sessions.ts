@@ -1,4 +1,5 @@
-export type ConsentType = 'authorized' | 'no_face' | 'not_authorized';
+import type { ConsentType } from '@/lib/consent-utils';
+export type { ConsentType };
 export type Slot = 'manhã' | 'tarde';
 
 export interface SessionChild {

@@ -3,6 +3,7 @@ import type { RegistrationWithDetails } from '@/types/database';
 import { shortenPlan } from '@/lib/plan-display';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL } from '@/lib/status-utils';
+import { firstName, shortName } from '@/lib/name-utils';
 
 function CheckBadge() {
   return (
@@ -21,12 +22,8 @@ interface Props {
 export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Props) {
   const { family, children } = reg;
 
-  const childrenLabel = children.map((c) => c.name.split(' ')[0]).join(' + ');
-
-  const nameParts = family.parent_name.trim().split(/\s+/);
-  const parentLabel = nameParts.length > 1
-    ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}`
-    : nameParts[0];
+  const childrenLabel = children.map((c) => firstName(c.name)).join(' + ');
+  const parentLabel = shortName(family.parent_name);
 
   const ageLabel = children
     .map((c) => (c.date_of_birth ? calculateAge(c.date_of_birth) : '—'))

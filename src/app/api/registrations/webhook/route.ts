@@ -2,24 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { parsePlan } from '@/lib/plan-parser';
 import type { WebhookPayload } from '@/types/webhook';
-
-const MONTH_MAP: Record<string, number> = {
-  janeiro: 1, fevereiro: 2, março: 3, abril: 4, maio: 5, junho: 6,
-  julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
-};
-
-function mapConsent(consent: string | null | undefined): string {
-  if (consent === 'Sim, autorizo') return 'authorized';
-  if (consent === 'Autorizo, mas o rosto não é exposto') return 'no_face';
-  return 'not_authorized';
-}
+import { MONTH_TO_NUMBER } from '@/lib/months';
+import { mapConsent } from '@/lib/consent-utils';
 
 async function resolveMonthId(
   supabase: ReturnType<typeof createServerClient>,
   mes: string | null,
   year: number,
 ): Promise<string | null> {
-  const monthNumber = mes ? MONTH_MAP[mes.toLowerCase()] : undefined;
+  const monthNumber = mes ? MONTH_TO_NUMBER[mes.toLowerCase()] : undefined;
   if (!monthNumber) return null;
 
   const { data: exact } = await supabase

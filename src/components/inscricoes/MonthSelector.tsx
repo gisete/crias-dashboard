@@ -2,16 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
-
-const MONTHS = [
-  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
-];
-
-const MONTH_LABELS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-];
+import { MONTH_NAMES as MONTHS, MONTH_LABELS } from '@/lib/months';
 
 const MIN_YEAR = 2025;
 const MAX_YEAR = new Date().getFullYear();

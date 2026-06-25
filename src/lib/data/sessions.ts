@@ -1,6 +1,8 @@
 import { supabaseClient } from '@/lib/supabase/client';
 import type { Session, SessionChild, ConsentType, Slot } from '@/types/sessions';
 import { parsePlan } from '@/lib/plan-parser';
+import { MONTH_TO_NUMBER } from '@/lib/months';
+import { mapConsent } from '@/lib/consent-utils';
 
 export { getAvailableYears } from './registrations';
 
@@ -8,18 +10,6 @@ export { getAvailableYears } from './registrations';
 export function getAvailableMonths(year: number): number[] {
   if (year === 2026) return [7];
   return [];
-}
-
-const MONTH_TO_NUMBER: Record<string, number> = {
-  janeiro: 1, fevereiro: 2, março: 3, abril: 4,
-  maio: 5, junho: 6, julho: 7, agosto: 8,
-  setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
-};
-
-function mapConsent(imageConsent: string | null): ConsentType {
-  if (!imageConsent || imageConsent === 'Não autorizo') return 'not_authorized';
-  if (imageConsent === 'Apenas para uso interno') return 'no_face';
-  return 'authorized';
 }
 
 function parseDateStr(dateStr: string): { day: number; slot: Slot } | null {

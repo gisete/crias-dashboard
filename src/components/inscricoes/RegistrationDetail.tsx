@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { Envelope, Phone, PencilSimple, Check, Trash, X } from '@phosphor-icons/react';
+import { Envelope, Phone, PencilSimple, Check, X } from '@phosphor-icons/react';
 import type { RegistrationWithDetails, RegistrationStatus } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
-import { updateRegistration, updateRegistrationStatus, deleteRegistration } from '@/lib/data/registrations';
+import { updateRegistration, updateRegistrationStatus } from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
 import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
 import { WebhookErrorBanner } from './WebhookErrorBanner';
+import { DeleteRegistrationButton } from './DeleteRegistrationButton';
 
 interface Props {
   registration: RegistrationWithDetails;
@@ -25,19 +25,10 @@ function formatDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function formatChildNames(names: string[]): string {
-  if (names.length === 0) return '';
-  if (names.length === 1) return names[0];
-  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;
-}
-
 export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange }: Props) {
   const { family, children } = reg;
   const [statusOpen, setStatusOpen] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [editingDates, setEditingDates] = useState(false);
   const [datesDraft, setDatesDraft] = useState('');
 
@@ -58,15 +49,6 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
       document.removeEventListener('keydown', onEscape);
     };
   }, [statusOpen]);
-
-  useEffect(() => {
-    if (!showModal) return;
-    function onEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !deleting) setShowModal(false);
-    }
-    document.addEventListener('keydown', onEscape);
-    return () => document.removeEventListener('keydown', onEscape);
-  }, [showModal, deleting]);
 
   async function handleSave(fieldName: string, value: string) {
     await updateRegistration(reg.id, { [fieldName]: value });
@@ -110,19 +92,9 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     onUpdate(reg.id, { webhook_error: false, webhook_error_message: null });
   }
 
-  async function handleDelete() {
-    setDeleting(true);
-    const result = await deleteRegistration(reg.id);
-    setDeleting(false);
-    if (result.success) {
-      setShowModal(false);
-    } else {
-      setShowModal(false);
-      setDeleteError('Erro ao eliminar. Tente novamente.');
-    }
-  }
-
-  const childNames = formatChildNames(children.map((c) => c.name));
+  const childNamesStr = children.length === 0 ? ''
+    : children.length === 1 ? children[0].name
+    : `${children.slice(0, -1).map((c) => c.name).join(', ')} e ${children[children.length - 1].name}`;
 
   return (
     <>
@@ -335,60 +307,12 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
 
             {/* Footer row */}
             <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => { setDeleteError(null); setShowModal(true); }}
-                  className="flex items-center gap-1.5 text-label-md text-red-300 hover:text-red-500 transition-colors"
-                >
-                  <Trash size={14} />
-                  Eliminar inscrição
-                </button>
-                {deleteError && (
-                  <p className="text-label-sm text-red-500">{deleteError}</p>
-                )}
-              </div>
+              <DeleteRegistrationButton registrationId={reg.id} childNames={childNamesStr} />
               <StatusActions status={reg.status} onAction={handleStatusChange} />
             </div>
           </div>
         </td>
       </tr>
-
-      {showModal && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => { if (!deleting) setShowModal(false); }}
-        >
-          <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
-          <div
-            className="relative bg-surface-container-lowest rounded-2xl shadow-xl p-8 max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-headline-md text-gray-900 mb-3">Eliminar inscrição?</h2>
-            <p className="text-body-md text-gray-600 mb-8">
-              Esta ação vai eliminar permanentemente a inscrição
-              {childNames ? ` de ${childNames}` : ''} e todos os dados associados (família e crianças).
-              Esta ação não pode ser revertida.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={deleting}
-                className="px-5 py-2.5 rounded-xl text-label-md border border-primary text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-5 py-2.5 rounded-xl text-label-md bg-error text-white hover:bg-error/90 transition-colors disabled:opacity-70"
-              >
-                {deleting ? 'A eliminar...' : 'Eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
     </>
   );
 }
