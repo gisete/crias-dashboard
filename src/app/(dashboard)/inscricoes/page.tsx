@@ -9,10 +9,13 @@ import {
   fetchStatusCounts,
   getAvailableMonths,
   getAvailableYears,
+  getLatestActiveMonth,
   type MonthStats,
   type StatusCounts,
 } from '@/lib/data/registrations';
+import { MONTH_NAMES } from '@/lib/months';
 import { MonthSelector } from '@/components/inscricoes/MonthSelector';
+import { AddMonthButton } from '@/components/inscricoes/AddMonthButton';
 import { StatCards } from '@/components/inscricoes/StatCards';
 import { StatusFilter } from '@/components/inscricoes/StatusFilter';
 import { RegistrationsTable } from '@/components/inscricoes/RegistrationsTable';
@@ -28,8 +31,8 @@ const EMPTY_STATS: MonthStats = {
 };
 
 export default function InscricoesPage() {
-  const [month, setMonth] = useState('julho');
-  const [year, setYear] = useState(2026);
+  const [month, setMonth] = useState<string | null>(null);
+  const [year, setYear] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('todos');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -40,16 +43,33 @@ export default function InscricoesPage() {
   const [monthsByYear, setMonthsByYear] = useState<Record<number, number[]>>({});
 
   useEffect(() => {
-    getAvailableYears().then(async (years) => {
-      setAvailableYears(years);
-      const entries = await Promise.all(
-        years.map(async (y) => [y, await getAvailableMonths(y)] as const)
-      );
-      setMonthsByYear(Object.fromEntries(entries));
+    getLatestActiveMonth().then((result) => {
+      if (result) {
+        setMonth(MONTH_NAMES[result.month - 1]);
+        setYear(result.year);
+      } else {
+        const now = new Date();
+        setMonth(MONTH_NAMES[now.getMonth()]);
+        setYear(now.getFullYear());
+      }
     });
   }, []);
 
+  const refreshAvailableMonths = useCallback(async () => {
+    const years = await getAvailableYears();
+    setAvailableYears(years);
+    const entries = await Promise.all(
+      years.map(async (y) => [y, await getAvailableMonths(y)] as const),
+    );
+    setMonthsByYear(Object.fromEntries(entries));
+  }, []);
+
+  useEffect(() => {
+    refreshAvailableMonths();
+  }, [refreshAvailableMonths]);
+
   const refetch = useCallback(() => {
+    if (!month || !year) return;
     fetchRegistrations(month, year, activeFilter).then(setRegistrations);
     fetchMonthStats(month, year).then(setStats);
     fetchStatusCounts(month, year).then(setCounts);
@@ -67,17 +87,18 @@ export default function InscricoesPage() {
 
   function handleUpdate(id: string, updates: Record<string, unknown>) {
     setRegistrations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
+      prev.map((r) => (r.id === id ? { ...r, ...updates } : r)),
     );
   }
 
   function handleStatusChange(id: string, newStatus: RegistrationStatus) {
     setRegistrations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
+      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
     );
-    // Optimistically update counts
-    fetchStatusCounts(month, year).then(setCounts);
-    fetchMonthStats(month, year).then(setStats);
+    if (month && year) {
+      fetchStatusCounts(month, year).then(setCounts);
+      fetchMonthStats(month, year).then(setStats);
+    }
   }
 
   function handleMonthChange(m: string, y: number) {
@@ -91,19 +112,30 @@ export default function InscricoesPage() {
     setExpandedId(null);
   }
 
+  if (!month || !year) return null;
+
   return (
     <>
       <div className="flex justify-between items-center mb-12">
         <h1 className="text-headline-lg text-gray-900">Inscrições</h1>
-        <MonthSelector
-          month={month}
-          year={year}
-          onChange={handleMonthChange}
-          availableYears={availableYears.length > 0 ? availableYears : undefined}
-          getAvailableMonths={
-            availableYears.length > 0 ? (y) => monthsByYear[y] ?? [] : undefined
-          }
-        />
+        <div className="flex items-center gap-2">
+          <MonthSelector
+            month={month}
+            year={year}
+            onChange={handleMonthChange}
+            availableYears={availableYears.length > 0 ? availableYears : undefined}
+            getAvailableMonths={
+              availableYears.length > 0 ? (y) => monthsByYear[y] ?? [] : undefined
+            }
+          />
+          <AddMonthButton
+            existingMonths={monthsByYear}
+            onCreated={(m, y) => {
+              refreshAvailableMonths();
+              handleMonthChange(m, y);
+            }}
+          />
+        </div>
       </div>
 
       <StatCards stats={stats} />

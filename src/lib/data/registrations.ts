@@ -119,6 +119,38 @@ export async function getAvailableYears(): Promise<number[]> {
   return [...new Set((data ?? []).map((r) => r.year as number))];
 }
 
+export async function getLatestActiveMonth(): Promise<{ month: number; year: number } | null> {
+  const { data, error } = await supabaseClient
+    .from('months')
+    .select('year, month')
+    .eq('status', 'active')
+    .order('year', { ascending: false })
+    .order('month', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return { year: data.year, month: data.month };
+}
+
+export async function createMonth(
+  year: number,
+  month: number,
+): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/months', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ year, month }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    return { success: false, error: data.error };
+  }
+
+  return { success: true };
+}
+
 export async function updateRegistration(
   id: string,
   updates: Record<string, unknown>
