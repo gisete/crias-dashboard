@@ -21,12 +21,12 @@ interface Props {
 export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Props) {
   const { family, children } = reg;
 
-  const childrenLabel =
-    children.length === 1
-      ? children[0].name
-      : children.map((c) => c.name.split(' ')[0]).join(' + ') +
-        ' ' +
-        (children[0]?.name.split(' ').pop() ?? '');
+  const childrenLabel = children.map((c) => c.name.split(' ')[0]).join(' + ');
+
+  const nameParts = family.parent_name.trim().split(/\s+/);
+  const parentLabel = nameParts.length > 1
+    ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}`
+    : nameParts[0];
 
   const ageLabel = children
     .map((c) => (c.date_of_birth ? calculateAge(c.date_of_birth) : '—'))
@@ -55,7 +55,7 @@ export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Pro
       <td className="py-6 px-6 text-gray-500 text-body-md">{ageLabel}</td>
 
       {/* 4. Responsável — plain text, no avatar */}
-      <td className="py-6 px-6 text-gray-600">{family.parent_name}</td>
+      <td className="py-6 px-6 text-gray-600">{parentLabel}</td>
 
       {/* 5. Plano */}
       <td className="py-6 px-6 text-gray-600">{shortenPlan(reg.plan)}</td>

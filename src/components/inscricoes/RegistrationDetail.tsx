@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Envelope, Phone, PencilSimple, Check, Trash } from '@phosphor-icons/react';
+import { Envelope, Phone, PencilSimple, Check, Trash, X } from '@phosphor-icons/react';
 import type { RegistrationWithDetails, RegistrationStatus } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
@@ -38,6 +38,8 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   const [showModal, setShowModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [editingDates, setEditingDates] = useState(false);
+  const [datesDraft, setDatesDraft] = useState('');
 
   useEffect(() => {
     if (!statusOpen) return;
@@ -238,9 +240,41 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 </div>
 
                 <div>
-                  <h4 className="text-label-sm text-gray-500 uppercase mb-4 tracking-wider">Sessões Agendadas</h4>
-                  {reg.selected_dates.length > 0 && (
-                    <div className="flex flex-wrap gap-3 mb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-label-sm text-gray-500 uppercase tracking-wider">Sessões Agendadas</h4>
+                    {!editingDates && (
+                      <button
+                        onClick={() => { setDatesDraft(reg.selected_dates.join(', ')); setEditingDates(true); }}
+                        className="text-gray-400 hover:text-gray-900 transition-colors"
+                      >
+                        <PencilSimple size={14} />
+                      </button>
+                    )}
+                  </div>
+                  {editingDates ? (
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 text-body-md border border-surface-container-highest rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        value={datesDraft}
+                        onChange={(e) => setDatesDraft(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        onClick={async () => { await handleDatesSave('selected_dates', datesDraft); setEditingDates(false); }}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors shrink-0 mt-0.5"
+                      >
+                        <Check size={14} weight="bold" />
+                      </button>
+                      <button
+                        onClick={() => setEditingDates(false)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-container-highest hover:bg-surface-container text-gray-500 transition-colors shrink-0 mt-0.5"
+                      >
+                        <X size={14} weight="bold" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
                       {reg.selected_dates.map((date) => (
                         <span
                           key={date}
@@ -251,12 +285,6 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                       ))}
                     </div>
                   )}
-                  <InlineEditField
-                    label="Datas"
-                    value={reg.selected_dates.join(', ')}
-                    fieldName="selected_dates"
-                    onSave={handleDatesSave}
-                  />
                 </div>
               </div>
 
