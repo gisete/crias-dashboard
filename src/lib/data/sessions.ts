@@ -78,7 +78,11 @@ export async function fetchSessionsByMonth(month: string, year: number): Promise
     const phone = reg.family?.phone ?? null;
     const regChildren = Array.isArray(reg.children) ? reg.children : [];
 
-    for (const dateStr of reg.selected_dates ?? []) {
+    const flatDates = (reg.selected_dates ?? []).flatMap((s) =>
+      s.includes(',') ? s.split(',').map((p) => p.trim()).filter(Boolean) : [s],
+    );
+
+    for (const dateStr of flatDates) {
       const parsed = parseDateStr(dateStr);
       if (!parsed) continue;
 

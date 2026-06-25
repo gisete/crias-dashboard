@@ -108,10 +108,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error', message: 'responsavel_email is required' }, { status: 400 });
   }
 
-  if (typeof body.datas_selecionadas === 'string') {
-    body.datas_selecionadas = (body.datas_selecionadas as string)
-      .split(', ')
-      .map((s) => s.trim())
+  if (typeof body.datas_selecionadas === 'string' || Array.isArray(body.datas_selecionadas)) {
+    const raw = Array.isArray(body.datas_selecionadas)
+      ? body.datas_selecionadas
+      : [body.datas_selecionadas as string];
+    body.datas_selecionadas = raw
+      .flatMap((s) => (typeof s === 'string' ? s.split(',') : [s]))
+      .map((s) => (typeof s === 'string' ? s.trim() : s))
       .filter(Boolean);
   }
 
