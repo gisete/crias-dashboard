@@ -30,10 +30,11 @@ function csvField(value: string): string {
 
 function formatDate(dateOfBirth: string | null): string {
   if (!dateOfBirth) return '';
-  const d = new Date(dateOfBirth);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}/${d.getFullYear()}`;
+  // DATE columns arrive as "YYYY-MM-DD"; format from the string directly —
+  // round-tripping through Date shifts a day in timezones west of UTC.
+  const [year, month, day] = dateOfBirth.split('-');
+  if (!year || !month || !day) return dateOfBirth;
+  return `${day}/${month}/${year}`;
 }
 
 interface ExportChild {

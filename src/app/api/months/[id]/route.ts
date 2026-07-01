@@ -7,7 +7,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { status } = await request.json();
+
+  let status: unknown;
+  try {
+    ({ status } = await request.json());
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
   if (status !== 'active' && status !== 'archived') {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });

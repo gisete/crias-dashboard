@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createSessionEntries, removeSessionEntries } from '@/lib/data/sessions-sync';
+import { ALL_STATUSES } from '@/lib/status-utils';
 import type { RegistrationStatus } from '@/types/database';
 
 export async function PATCH(
@@ -8,7 +9,17 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { status } = await request.json();
+
+  let status: RegistrationStatus;
+  try {
+    ({ status } = await request.json());
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  if (!ALL_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  }
 
   const supabase = createServerClient();
 
@@ -37,10 +48,20 @@ export async function PATCH(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  if (status === 'pago_confirmado' && oldStatus !== 'pago_confirmado') {
-    await createSessionEntries(id);
-  } else if (oldStatus === 'pago_confirmado' && status !== 'pago_confirmado') {
-    await removeSessionEntries(id);
+  try {
+    if (status === 'pago_confirmado' && oldStatus !== 'pago_confirmado') {
+      await createSessionEntries(id);
+    } else if (oldStatus === 'pago_confirmado' && status !== 'pago_confirmado') {
+      await removeSessionEntries(id);
+    }
+  } catch (error) {
+    // The status update already succeeded — surface the partial state
+    // instead of a bare 500 so the caller knows sessions are out of sync.
+    console.error(`Session sync failed for registration ${id}:`, error);
+    return NextResponse.json(
+      { error: 'Estado atualizado, mas a sincronização de sessões falhou.' },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ success: true });

@@ -21,43 +21,73 @@ async function getDefaultCapacity(supabase: ServerClient): Promise<number> {
   return data ? Number(data.value) : 16;
 }
 
-async function upsertSession(
+/**
+ * Batched insert of sessions + session_children for a set of dates.
+ * Three round trips total (upsert sessions, select ids, upsert children)
+ * instead of per-date/per-child queries.
+ */
+async function addSessionEntries(
   supabase: ServerClient,
-  date: string,
-  slot: 'manhã' | 'tarde',
+  registrationId: string,
   month: string,
   year: number,
-  capacity: number,
-): Promise<string | null> {
-  await supabase
-    .from('sessions')
-    .upsert(
-      { date, slot, month, year, capacity },
-      { onConflict: 'date,slot,month,year', ignoreDuplicates: true },
-    );
+  dates: string[],
+  childIds: string[],
+): Promise<void> {
+  const parsedDates = dates
+    .map(parseDateString)
+    .filter((p): p is { date: string; slot: 'manhã' | 'tarde' } => p !== null);
 
-  const { data } = await supabase
+  if (parsedDates.length === 0 || childIds.length === 0) return;
+
+  const capacity = await getDefaultCapacity(supabase);
+
+  await supabase.from('sessions').upsert(
+    parsedDates.map((p) => ({ date: p.date, slot: p.slot, month, year, capacity })),
+    { onConflict: 'date,slot,month,year', ignoreDuplicates: true },
+  );
+
+  const { data: sessions } = await supabase
     .from('sessions')
-    .select('id')
-    .eq('date', date)
-    .eq('slot', slot)
+    .select('id, date, slot')
     .eq('month', month)
     .eq('year', year)
-    .maybeSingle();
+    .in('date', parsedDates.map((p) => p.date));
 
-  return data?.id ?? null;
+  const sessionIdByKey = new Map(
+    (sessions ?? []).map((s) => [`${s.date}|${s.slot}`, s.id as string]),
+  );
+
+  const rows = parsedDates.flatMap((p) => {
+    const sessionId = sessionIdByKey.get(`${p.date}|${p.slot}`);
+    if (!sessionId) return [];
+    return childIds.map((childId) => ({
+      session_id: sessionId,
+      child_id: childId,
+      registration_id: registrationId,
+    }));
+  });
+
+  if (rows.length > 0) {
+    await supabase
+      .from('session_children')
+      .upsert(rows, { onConflict: 'session_id,child_id', ignoreDuplicates: true });
+  }
 }
 
 async function removeOrphanedSessions(supabase: ServerClient, sessionIds: string[]): Promise<void> {
-  for (const sessionId of sessionIds) {
-    const { count } = await supabase
-      .from('session_children')
-      .select('id', { count: 'exact', head: true })
-      .eq('session_id', sessionId);
+  if (sessionIds.length === 0) return;
 
-    if (!count) {
-      await supabase.from('sessions').delete().eq('id', sessionId);
-    }
+  const { data: stillUsed } = await supabase
+    .from('session_children')
+    .select('session_id')
+    .in('session_id', sessionIds);
+
+  const usedIds = new Set((stillUsed ?? []).map((r) => r.session_id as string));
+  const orphaned = sessionIds.filter((id) => !usedIds.has(id));
+
+  if (orphaned.length > 0) {
+    await supabase.from('sessions').delete().in('id', orphaned);
   }
 }
 
@@ -83,33 +113,15 @@ export async function createSessionEntries(registrationId: string): Promise<void
     .eq('registration_id', registrationId);
 
   const childIds = (children ?? []).map((c) => c.id as string);
-  if (childIds.length === 0) return;
 
-  const defaultCapacity = await getDefaultCapacity(supabase);
-
-  for (const dateStr of (reg.selected_dates as string[]) ?? []) {
-    const parsed = parseDateString(dateStr);
-    if (!parsed) continue;
-
-    const sessionId = await upsertSession(
-      supabase,
-      parsed.date,
-      parsed.slot,
-      reg.month,
-      reg.year,
-      defaultCapacity,
-    );
-    if (!sessionId) continue;
-
-    for (const childId of childIds) {
-      await supabase
-        .from('session_children')
-        .upsert(
-          { session_id: sessionId, child_id: childId, registration_id: registrationId },
-          { onConflict: 'session_id,child_id', ignoreDuplicates: true },
-        );
-    }
-  }
+  await addSessionEntries(
+    supabase,
+    registrationId,
+    reg.month,
+    reg.year,
+    (reg.selected_dates as string[]) ?? [],
+    childIds,
+  );
 }
 
 /**
@@ -183,39 +195,14 @@ export async function syncSessionEntries(registrationId: string, newDates: strin
   );
   const toAdd = newDates.filter((d) => !oldDateSet.has(d));
 
-  const sessionIdsToCheck = new Set<string>();
-  for (const row of toRemove) {
-    await supabase.from('session_children').delete().eq('id', row.id);
-    sessionIdsToCheck.add(row.session_id);
+  if (toRemove.length > 0) {
+    await supabase
+      .from('session_children')
+      .delete()
+      .in('id', toRemove.map((row) => row.id));
+
+    await removeOrphanedSessions(supabase, [...new Set(toRemove.map((row) => row.session_id))]);
   }
 
-  await removeOrphanedSessions(supabase, [...sessionIdsToCheck]);
-
-  if (toAdd.length > 0 && childIds.length > 0) {
-    const defaultCapacity = await getDefaultCapacity(supabase);
-
-    for (const dateStr of toAdd) {
-      const parsed = parseDateString(dateStr);
-      if (!parsed) continue;
-
-      const sessionId = await upsertSession(
-        supabase,
-        parsed.date,
-        parsed.slot,
-        reg.month,
-        reg.year,
-        defaultCapacity,
-      );
-      if (!sessionId) continue;
-
-      for (const childId of childIds) {
-        await supabase
-          .from('session_children')
-          .upsert(
-            { session_id: sessionId, child_id: childId, registration_id: registrationId },
-            { onConflict: 'session_id,child_id', ignoreDuplicates: true },
-          );
-      }
-    }
-  }
+  await addSessionEntries(supabase, registrationId, reg.month, reg.year, toAdd, childIds);
 }

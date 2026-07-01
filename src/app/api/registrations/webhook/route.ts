@@ -58,10 +58,12 @@ async function findOrCreateFamily(
   supabase: ReturnType<typeof createServerClient>,
   payload: WebhookPayload,
 ): Promise<string> {
+  // Emails are normalized to lowercase before this runs (and stored lowercase
+  // everywhere), so an exact match suffices — no ilike wildcard pitfalls.
   const { data: existing } = await supabase
     .from('families')
     .select('id, parent_name, phone')
-    .ilike('email', payload.responsavel_email!)
+    .eq('email', payload.responsavel_email!)
     .maybeSingle();
 
   if (existing) {
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error', message: 'responsavel_email is required' }, { status: 400 });
   }
 
+  body.responsavel_email = body.responsavel_email.trim().toLowerCase();
   body.datas_selecionadas = normalizeStringArray(body.datas_selecionadas).map(normalizeDateEntry);
 
   try {

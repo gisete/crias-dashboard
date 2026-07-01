@@ -33,7 +33,7 @@ export async function POST(
 
   const { data: registration, error: regError } = await supabase
     .from('registrations')
-    .select('id, family_id')
+    .select('id, family:families(id, email, parent_name, phone)')
     .eq('id', id)
     .maybeSingle();
 
@@ -44,15 +44,13 @@ export async function POST(
     return NextResponse.json({ error: 'Inscrição não encontrada.' }, { status: 404 });
   }
 
-  const { data: family, error: familyError } = await supabase
-    .from('families')
-    .select('id, email, parent_name, phone')
-    .eq('id', registration.family_id)
-    .maybeSingle();
+  const family = registration.family as unknown as {
+    id: string;
+    email: string;
+    parent_name: string;
+    phone: string | null;
+  } | null;
 
-  if (familyError) {
-    return NextResponse.json({ error: familyError.message }, { status: 500 });
-  }
   if (!family) {
     return NextResponse.json({ error: 'Família não encontrada.' }, { status: 404 });
   }
@@ -63,6 +61,7 @@ export async function POST(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: family.email }),
+      signal: AbortSignal.timeout(15_000),
     });
   } catch {
     return NextResponse.json(
@@ -110,15 +109,20 @@ export async function POST(
     familyUpdates.phone = payload.TEL_SMS.trim();
   }
 
-  if (Object.keys(familyUpdates).length > 0) {
-    await supabase.from('families').update(familyUpdates).eq('id', family.id);
-  }
+  let updatedFamily: { parent_name: string; phone: string | null } | null = {
+    parent_name: family.parent_name,
+    phone: family.phone,
+  };
 
-  const { data: updatedFamily } = await supabase
-    .from('families')
-    .select('parent_name, phone')
-    .eq('id', family.id)
-    .maybeSingle();
+  if (Object.keys(familyUpdates).length > 0) {
+    const { data } = await supabase
+      .from('families')
+      .update(familyUpdates)
+      .eq('id', family.id)
+      .select('parent_name, phone')
+      .maybeSingle();
+    updatedFamily = data ?? updatedFamily;
+  }
 
   // --- Children update, matched in-place by position ---
   const newNames = splitList(payload.CHILD_NAME);
