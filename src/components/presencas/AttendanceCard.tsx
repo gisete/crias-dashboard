@@ -40,10 +40,10 @@ export function AttendanceCard({ child, onMark }: Props) {
       <div className="flex gap-2">
         <button
           onClick={handlePresente}
-          className={`flex-1 min-h-11 flex items-center justify-center gap-1.5 rounded-lg text-label-md transition-colors ${
+          className={`flex-1 min-h-11 flex items-center justify-center gap-1.5 rounded-lg text-label-md transition-colors touch-manipulation select-none ${
             present === true
               ? 'bg-status-pago-bg text-status-pago-text'
-              : 'border border-surface-container-highest text-gray-600 hover:bg-surface-container-low'
+              : 'border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
           }`}
         >
           <Check size={16} weight="bold" />
@@ -51,10 +51,10 @@ export function AttendanceCard({ child, onMark }: Props) {
         </button>
         <button
           onClick={handleFalta}
-          className={`flex-1 min-h-11 flex items-center justify-center gap-1.5 rounded-lg text-label-md transition-colors ${
+          className={`flex-1 min-h-11 flex items-center justify-center gap-1.5 rounded-lg text-label-md transition-colors touch-manipulation select-none ${
             present === false
               ? 'bg-error-container/30 text-error'
-              : 'border border-surface-container-highest text-gray-600 hover:bg-surface-container-low'
+              : 'border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
           }`}
         >
           <X size={16} weight="bold" />

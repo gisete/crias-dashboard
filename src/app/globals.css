@@ -105,6 +105,14 @@ body {
   color: var(--color-on-surface);
 }
 
+/* Scrollable strips (date chips, filter pills) that shouldn't show a scrollbar */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes dropdown-in {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }

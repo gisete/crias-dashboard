@@ -49,12 +49,12 @@ interface Props {
 
 export function StatusFilter({ active, counts, onChange }: Props) {
   return (
-    <div className="flex flex-wrap gap-4 mb-10">
+    <div className="flex gap-2 sm:gap-4 mb-8 sm:mb-10 overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0 scrollbar-none">
       {FILTERS.map(({ key, label, activeClass, inactiveClass }) => (
         <button
           key={key}
           onClick={() => onChange(key)}
-          className={`px-6 py-3 rounded-lg text-label-md border transition-colors ${
+          className={`shrink-0 px-4 sm:px-6 py-3 rounded-lg text-label-md border transition-colors whitespace-nowrap touch-manipulation select-none ${
             active === key ? activeClass : inactiveClass
           }`}
         >

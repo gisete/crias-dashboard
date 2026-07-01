@@ -31,10 +31,10 @@ export function SessionCard({ session, displayChildren }: Props) {
     <div className="bg-white rounded-xl border border-surface-container-highest shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
       <button
         onClick={() => setIsOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-6 py-5 hover:bg-surface-container-low transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 sm:px-6 py-5 hover:bg-surface-container-low transition-colors text-left touch-manipulation"
       >
-        <div className="flex items-center gap-4 min-w-0">
-          <CalendarBlank size={18} className="text-gray-400 shrink-0" />
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <CalendarBlank size={18} className="text-gray-400 shrink-0 hidden sm:block" />
           <span className="text-body-md font-medium text-gray-900 truncate">
             {formatSessionDate(session.date)}
           </span>
@@ -42,7 +42,7 @@ export function SessionCard({ session, displayChildren }: Props) {
             {SLOT_LABEL[session.slot]}
           </span>
         </div>
-        <div className="flex items-center gap-5 shrink-0 ml-6">
+        <div className="flex items-center gap-3 sm:gap-5 shrink-0 ml-3 sm:ml-6">
           <span className="text-body-md text-gray-500 font-normal whitespace-nowrap">
             {childrenLabel}
           </span>

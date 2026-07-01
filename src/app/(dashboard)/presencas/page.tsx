@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getAvailableMonths,
   getAvailableYears,
@@ -51,6 +51,16 @@ export default function PresencasPage() {
   const [datesLoaded, setDatesLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
+  const chipsRef = useRef<HTMLDivElement>(null);
+
+  // Keep the selected date chip visible in the horizontal strip — on mobile
+  // the default date (e.g. today, late in the month) is often off-screen.
+  useEffect(() => {
+    if (!selectedDate || !chipsRef.current) return;
+    chipsRef.current
+      .querySelector<HTMLElement>(`[data-date="${CSS.escape(selectedDate)}"]`)
+      ?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [selectedDate, sessionDates]);
 
   useEffect(() => {
     getLatestActiveMonth().then((result) => {
@@ -148,15 +158,19 @@ export default function PresencasPage() {
         </div>
       ) : (
         <>
-          <div className="flex gap-2 overflow-x-auto mb-8 pb-1">
+          <div
+            ref={chipsRef}
+            className="flex gap-2 overflow-x-auto mb-8 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none"
+          >
             {sessionDates.map((d) => (
               <button
                 key={d.date}
+                data-date={d.date}
                 onClick={() => setSelectedDate(d.date)}
-                className={`shrink-0 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors ${
+                className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
                   selectedDate === d.date
                     ? 'bg-on-primary-fixed text-white'
-                    : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low'
+                    : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
                 }`}
               >
                 {d.date} {d.dayOfWeek}

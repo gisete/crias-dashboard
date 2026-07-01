@@ -131,7 +131,10 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 onResend={handleResend}
               />
             )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+            {/* The parent cell is always ≥900px (table min-w), so use a fixed
+                3-column layout — viewport breakpoints would collapse this to
+                one stretched column on phones. */}
+            <div className="grid grid-cols-3 gap-16">
               {/* Left — Estado, Contacto & Crianças */}
               <div className="flex flex-col gap-10">
                 <div>

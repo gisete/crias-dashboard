@@ -140,25 +140,25 @@ export function MonthSelector({
   return (
     <div ref={containerRef} className="relative">
       {/* ── Pill ── */}
-      <div className="flex items-center gap-1 bg-surface-container-lowest border border-surface-container-highest rounded-full p-2 shadow-sm">
+      <div className="flex items-center justify-between gap-1 bg-surface-container-lowest border border-surface-container-highest rounded-full p-2 shadow-sm">
         <button
           onClick={prev}
           disabled={!prevTarget}
-          className="text-gray-500 hover:text-gray-900 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
+          className="text-gray-500 hover:text-gray-900 transition-colors w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Mês anterior"
         >
           <CaretLeft size={14} weight="bold" />
         </button>
         <button
           onClick={() => setIsOpen((o) => !o)}
-          className="text-body-md font-medium px-2 text-gray-900 min-w-[120px] text-center hover:text-primary transition-colors"
+          className="flex-1 text-body-md font-medium px-2 text-gray-900 min-w-[120px] text-center hover:text-primary transition-colors"
         >
           {label}
         </button>
         <button
           onClick={next}
           disabled={!nextTarget}
-          className="text-gray-500 hover:text-gray-900 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
+          className="text-gray-500 hover:text-gray-900 transition-colors w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Próximo mês"
         >
           <CaretRight size={14} weight="bold" />
