@@ -3,17 +3,8 @@
 import { useState } from 'react';
 import { CalendarBlank, CaretDown } from '@phosphor-icons/react';
 import type { Session, SessionChild } from '@/types/sessions';
+import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
 import { SessionTable } from './SessionTable';
-
-const SLOT_PILL = {
-  'manhã': 'bg-amber-100 text-amber-700',
-  'tarde': 'bg-indigo-50 text-indigo-600',
-} as const;
-
-const SLOT_LABEL = {
-  'manhã': 'Manhã',
-  'tarde': 'Tarde',
-} as const;
 
 const DAY_NAMES = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];

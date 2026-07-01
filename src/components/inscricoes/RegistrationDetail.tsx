@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Envelope, Phone, PencilSimple, Check, X } from '@phosphor-icons/react';
-import type { RegistrationWithDetails, RegistrationStatus } from '@/types/database';
+import type { RegistrationWithDetails, RegistrationStatus, Child } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
-import { updateRegistration, updateRegistrationStatus } from '@/lib/data/registrations';
+import {
+  updateRegistration,
+  updateRegistrationStatus,
+  updateRegistrationDates,
+} from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
 import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
@@ -25,12 +30,19 @@ function formatDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+function formatChildNames(children: Child[]): string {
+  if (children.length === 0) return '';
+  if (children.length === 1) return children[0].name;
+  return `${children.slice(0, -1).map((c) => c.name).join(', ')} e ${children[children.length - 1].name}`;
+}
+
 export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange }: Props) {
   const { family, children } = reg;
   const [statusOpen, setStatusOpen] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const [editingDates, setEditingDates] = useState(false);
   const [datesDraft, setDatesDraft] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<RegistrationStatus | null>(null);
 
   useEffect(() => {
     if (!statusOpen) return;
@@ -71,7 +83,11 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
 
   async function handleDatesSave(_fieldName: string, value: string) {
     const dates = value.split(',').map((s) => s.trim()).filter(Boolean);
-    await updateRegistration(reg.id, { selected_dates: dates });
+    if (reg.status === 'pago_confirmado') {
+      await updateRegistrationDates(reg.id, dates);
+    } else {
+      await updateRegistration(reg.id, { selected_dates: dates });
+    }
     onUpdate(reg.id, { selected_dates: dates });
   }
 
@@ -80,11 +96,20 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     onStatusChange(reg.id, newStatus);
   }
 
-  async function handleStatusSelect(newStatus: RegistrationStatus) {
+  function handleStatusSelect(newStatus: RegistrationStatus) {
     setStatusOpen(false);
-    if (newStatus !== reg.status) {
-      await handleStatusChange(newStatus);
+    if (newStatus === reg.status) return;
+    if (reg.status === 'pago_confirmado' && newStatus !== 'pago_confirmado') {
+      setPendingStatus(newStatus);
+      return;
     }
+    handleStatusChange(newStatus);
+  }
+
+  async function handleConfirmStatusChange() {
+    if (!pendingStatus) return;
+    await handleStatusChange(pendingStatus);
+    setPendingStatus(null);
   }
 
   async function handleResend() {
@@ -92,9 +117,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     onUpdate(reg.id, { webhook_error: false, webhook_error_message: null });
   }
 
-  const childNamesStr = children.length === 0 ? ''
-    : children.length === 1 ? children[0].name
-    : `${children.slice(0, -1).map((c) => c.name).join(', ')} e ${children[children.length - 1].name}`;
+  const childNamesStr = formatChildNames(children);
 
   return (
     <>
@@ -313,6 +336,41 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
           </div>
         </td>
       </tr>
+
+      {pendingStatus && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setPendingStatus(null)}
+        >
+          <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
+          <div
+            className="relative bg-surface-container-lowest rounded-2xl shadow-xl p-8 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-headline-md text-gray-900 mb-3">Alterar estado?</h2>
+            <p className="text-body-md text-gray-600 mb-8">
+              Ao alterar de Pago para {STATUS_LABELS[pendingStatus]}, {childNamesStr} será
+              removido(a) das sessões agendadas. Esta ação pode ser revertida confirmando o
+              pagamento novamente.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setPendingStatus(null)}
+                className="px-5 py-2.5 rounded-xl text-label-md border border-primary text-primary hover:bg-primary/5 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmStatusChange}
+                className="px-5 py-2.5 rounded-xl text-label-md bg-on-primary-fixed text-white hover:bg-on-primary-fixed/90 transition-colors"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </>
   );
 }

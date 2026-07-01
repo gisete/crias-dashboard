@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 
 export function useRealtimeRegistrations(onchange: () => void) {
   const callbackRef = useRef(onchange);
+  const channelName = `registrations-changes-${useId()}`;
 
   // Keep the ref pointing at the latest callback without re-subscribing.
   useEffect(() => {
@@ -13,7 +14,7 @@ export function useRealtimeRegistrations(onchange: () => void) {
 
   useEffect(() => {
     const channel = supabaseClient
-      .channel('registrations-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'registrations' },
@@ -24,5 +25,5 @@ export function useRealtimeRegistrations(onchange: () => void) {
     return () => {
       supabaseClient.removeChannel(channel);
     };
-  }, []);
+  }, [channelName]);
 }

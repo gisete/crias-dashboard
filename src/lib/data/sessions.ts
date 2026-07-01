@@ -1,118 +1,104 @@
 import { supabaseClient } from '@/lib/supabase/client';
-import type { Session, SessionChild, ConsentType, Slot } from '@/types/sessions';
+import type { Session, SessionChild, Slot } from '@/types/sessions';
 import { parsePlan } from '@/lib/plan-parser';
 import { MONTH_TO_NUMBER } from '@/lib/months';
 import { mapConsent } from '@/lib/consent-utils';
 
 export { getAvailableYears } from './registrations';
 
-// Hard-coded until months table drives the picker; swap for a Supabase query later.
-export function getAvailableMonths(year: number): number[] {
-  if (year === 2026) return [7];
-  return [];
+interface SessionRow {
+  id: string;
+  date: string;
+  slot: Slot;
+  capacity: number;
 }
 
-function parseDateStr(dateStr: string): { day: number; slot: Slot } | null {
-  const match = dateStr.match(/^(\d+)\s+\((manhã|tarde)\)$/);
-  if (!match) return null;
-  return { day: parseInt(match[1], 10), slot: match[2] as Slot };
-}
-
-export async function fetchSessionsByMonth(month: string, year: number): Promise<Session[]> {
-  const [settingsResult, overridesResult, registrationsResult] = await Promise.all([
-    supabaseClient
-      .from('settings')
-      .select('value')
-      .eq('key', 'default_session_capacity')
-      .single(),
-    supabaseClient
-      .from('session_overrides')
-      .select('date, slot, capacity')
-      .eq('year', year)
-      .eq('month', month),
-    supabaseClient
-      .from('registrations')
-      .select('plan, total_price, num_sessions, selected_dates, image_consent, status, family:families(parent_name, phone), children(name, date_of_birth)')
-      .eq('month', month)
-      .eq('year', year)
-      .eq('status', 'pago_confirmado'),
-  ]);
-
-  const defaultCapacity = settingsResult.data
-    ? Number(settingsResult.data.value)
-    : 12;
-
-  const overrideMap = new Map<string, number>();
-  for (const o of overridesResult.data ?? []) {
-    overrideMap.set(`${o.date}|${o.slot}`, o.capacity);
-  }
-
-  type RegRow = {
+interface SessionChildRow {
+  session_id: string;
+  child: { name: string; date_of_birth: string | null } | null;
+  registration: {
     plan: string;
     total_price: number;
     num_sessions: number;
-    selected_dates: string[];
     image_consent: string | null;
     status: string;
     family: { parent_name: string; phone: string | null } | null;
-    children: { name: string; date_of_birth: string | null }[];
-  };
+  } | null;
+}
 
-  const sessionMap = new Map<string, { day: number; slot: Slot; children: SessionChild[] }>();
+export async function fetchSessionsByMonth(month: string, year: number): Promise<Session[]> {
+  const { data: sessionsData, error: sessionsError } = await supabaseClient
+    .from('sessions')
+    .select('id, date, slot, capacity')
+    .eq('month', month)
+    .eq('year', year);
 
-  for (const reg of (registrationsResult.data ?? []) as unknown as RegRow[]) {
-    const { hasPhotos } = parsePlan(reg.plan);
-    const consent = mapConsent(reg.image_consent);
-    const perSessionValue = reg.num_sessions > 0 ? reg.total_price / reg.num_sessions : 0;
-    const responsavelName = reg.family?.parent_name ?? '';
-    const phone = reg.family?.phone ?? null;
-    const regChildren = Array.isArray(reg.children) ? reg.children : [];
+  if (sessionsError) {
+    console.error('fetchSessionsByMonth sessions error:', sessionsError);
+    return [];
+  }
 
-    const flatDates = (reg.selected_dates ?? []).flatMap((s) =>
-      s.includes(',') ? s.split(',').map((p) => p.trim()).filter(Boolean) : [s],
-    );
+  const sessions = (sessionsData ?? []) as SessionRow[];
+  if (sessions.length === 0) return [];
 
-    for (const dateStr of flatDates) {
-      const parsed = parseDateStr(dateStr);
-      if (!parsed) continue;
+  const sessionIds = sessions.map((s) => s.id);
 
-      const { day, slot } = parsed;
-      const key = `${day}|${slot}`;
+  const { data: childrenData, error: childrenError } = await supabaseClient
+    .from('session_children')
+    .select(
+      'session_id, child:children(name, date_of_birth), registration:registrations(plan, total_price, num_sessions, image_consent, status, family:families(parent_name, phone))',
+    )
+    .in('session_id', sessionIds);
 
-      if (!sessionMap.has(key)) {
-        sessionMap.set(key, { day, slot, children: [] });
-      }
+  if (childrenError) {
+    console.error('fetchSessionsByMonth session_children error:', childrenError);
+  }
 
-      for (const child of regChildren) {
-        sessionMap.get(key)!.children.push({
-          childName: child.name,
-          birthDate: child.date_of_birth ?? '',
-          responsavelName,
-          phone,
-          consent,
-          hasPhotoPlan: hasPhotos,
-          perSessionValue,
-          registrationStatus: reg.status,
-        });
-      }
+  const rows = (childrenData ?? []) as unknown as SessionChildRow[];
+
+  const childrenBySession = new Map<string, SessionChild[]>();
+
+  for (const row of rows) {
+    if (!row.child || !row.registration) continue;
+
+    const { hasPhotos } = parsePlan(row.registration.plan);
+    const consent = mapConsent(row.registration.image_consent);
+    const perSessionValue =
+      row.registration.num_sessions > 0
+        ? row.registration.total_price / row.registration.num_sessions
+        : 0;
+
+    const sessionChild: SessionChild = {
+      childName: row.child.name,
+      birthDate: row.child.date_of_birth ?? '',
+      responsavelName: row.registration.family?.parent_name ?? '',
+      phone: row.registration.family?.phone ?? null,
+      consent,
+      hasPhotoPlan: hasPhotos,
+      perSessionValue,
+      registrationStatus: row.registration.status,
+    };
+
+    if (!childrenBySession.has(row.session_id)) {
+      childrenBySession.set(row.session_id, []);
     }
+    childrenBySession.get(row.session_id)!.push(sessionChild);
   }
 
   const monthNum = MONTH_TO_NUMBER[month] ?? 1;
 
-  return Array.from(sessionMap.entries())
-    .sort(([aKey], [bKey]) => {
-      const [aDay, aSlot] = aKey.split('|');
-      const [bDay, bSlot] = bKey.split('|');
-      const dayDiff = parseInt(aDay, 10) - parseInt(bDay, 10);
+  return sessions
+    .slice()
+    .sort((a, b) => {
+      const dayDiff = parseInt(a.date, 10) - parseInt(b.date, 10);
       if (dayDiff !== 0) return dayDiff;
-      return aSlot === 'manhã' ? -1 : 1;
+      return a.slot === 'manhã' ? -1 : 1;
     })
-    .map(([key, { day, slot, children }]) => ({
-      id: `${month}-${year}-${day}-${slot}`,
-      date: `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-      slot,
-      children,
-      capacity: overrideMap.get(key) ?? defaultCapacity,
+    .map((s) => ({
+      id: s.id,
+      date: `${year}-${String(monthNum).padStart(2, '0')}-${String(parseInt(s.date, 10)).padStart(2, '0')}`,
+      slot: s.slot,
+      children: childrenBySession.get(s.id) ?? [],
+      capacity: s.capacity,
     }));
 }

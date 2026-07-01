@@ -204,11 +204,22 @@ export async function updateRegistrationStatus(
   id: string,
   newStatus: string
 ): Promise<{ success: boolean }> {
-  const { error } = await supabaseClient
-    .from('registrations')
-    .update({ status: newStatus })
-    .eq('id', id);
+  const res = await fetch(`/api/registrations/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus }),
+  });
+  return { success: res.ok };
+}
 
-  if (error) console.error('updateRegistrationStatus error:', error);
-  return { success: !error };
+export async function updateRegistrationDates(
+  id: string,
+  dates: string[]
+): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/registrations/${id}/dates`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dates }),
+  });
+  return { success: res.ok };
 }

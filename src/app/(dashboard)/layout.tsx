@@ -5,13 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   ClipboardText,
   CalendarCheck,
+  CalendarDots,
+  UserCheck,
   SignOut,
-  Warning,
   Bell,
   UserCircle,
 } from '@phosphor-icons/react';
-
-const PENDING_COUNT = 4; // TODO: fetch dynamically
+import { PendingCounter } from '@/components/layout/PendingCounter';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -56,11 +56,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-body-md">Sessões</span>
           </Link>
 
+          <Link
+            href="/meses"
+            className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+              pathname.startsWith('/meses')
+                ? 'bg-white/10 text-white font-bold'
+                : 'text-gray-300 hover:bg-white/5'
+            }`}
+          >
+            <CalendarDots size={20} weight={pathname.startsWith('/meses') ? 'fill' : 'regular'} />
+            <span className="text-body-md">Meses</span>
+          </Link>
+
+          <Link
+            href="/presencas"
+            className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+              pathname.startsWith('/presencas')
+                ? 'bg-white/10 text-white font-bold'
+                : 'text-gray-300 hover:bg-white/5'
+            }`}
+          >
+            <UserCheck size={20} weight={pathname.startsWith('/presencas') ? 'fill' : 'regular'} />
+            <span className="text-body-md">Presenças</span>
+          </Link>
+
           <div className="mt-8 pt-8 border-t border-white/10">
-            <div className="flex items-center gap-3 p-3 text-primary-fixed text-label-md bg-white/5 rounded-lg">
-              <Warning size={18} weight="fill" />
-              <span>Pendente: {PENDING_COUNT}</span>
-            </div>
+            <PendingCounter />
           </div>
         </nav>
 

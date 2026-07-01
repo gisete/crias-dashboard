@@ -69,9 +69,3 @@ INSERT INTO children (registration_id, name, date_of_birth) VALUES
   ('a0000000-0000-0000-0000-000000000006', 'Martim Lopes',       '2023-08-12'),
   ('a0000000-0000-0000-0000-000000000007', 'Afonso Almeida',     '2019-06-05'),
   ('a0000000-0000-0000-0000-000000000008', 'Gabriel Rocha',      '2020-02-18');
-
--- Session overrides
-INSERT INTO session_overrides (date, slot, capacity, year, month) VALUES
-  ('5',  E'manhã', 20, 2026, 'julho'),
-  ('12', 'tarde',        8, 2026, 'julho')
-ON CONFLICT (date, slot, year, month) DO UPDATE SET capacity = EXCLUDED.capacity;

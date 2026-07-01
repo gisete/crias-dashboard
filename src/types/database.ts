@@ -54,3 +54,23 @@ export interface Month {
   status: 'active' | 'archived';
   created_at: string;
 }
+
+export interface Session {
+  id: string;
+  date: string;
+  slot: 'manhã' | 'tarde';
+  month: string;
+  year: number;
+  capacity: number;
+  created_at: string;
+}
+
+export interface SessionChild {
+  id: string;
+  session_id: string;
+  child_id: string;
+  registration_id: string;
+  present: boolean | null;
+  marked_at: string | null;
+  created_at: string;
+}

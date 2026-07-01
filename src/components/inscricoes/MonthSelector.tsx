@@ -5,7 +5,7 @@ import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { MONTH_NAMES as MONTHS, MONTH_LABELS } from '@/lib/months';
 
 const MIN_YEAR = 2025;
-const MAX_YEAR = new Date().getFullYear();
+const MAX_YEAR = new Date().getFullYear() + 1;
 
 interface Props {
   month: string;
