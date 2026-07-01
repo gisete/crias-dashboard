@@ -6,7 +6,21 @@ interface MakeResyncResponse {
   FIRSTNAME?: string;
   TEL_SMS?: string;
   CHILD_NAME?: string;
-  CHILD_DOB?: string;
+  CHILD_DOB?: string | { value?: string };
+}
+
+// Brevo stores some DOBs as {"value":"06/11/2025"}; Make interpolates that
+// raw into its JSON response, producing an invalid body. Unwrap the pattern
+// down to just the inner content.
+const WRAPPED_VALUE = /\{"value":"([^"]+)"\}/g;
+
+/** Handles CHILD_DOB arriving as a plain string, a wrapped string, or —
+ * should Make start escaping properly — a parsed {value} object. */
+function unwrapDob(raw: MakeResyncResponse['CHILD_DOB']): string | undefined {
+  if (raw && typeof raw === 'object') {
+    return typeof raw.value === 'string' ? raw.value : undefined;
+  }
+  return raw?.replace(WRAPPED_VALUE, '$1');
 }
 
 function splitList(value: string | undefined): string[] {
@@ -79,7 +93,10 @@ export async function POST(
 
   let payload: MakeResyncResponse;
   try {
-    payload = await makeResponse.json();
+    // Read as text and unwrap Brevo's {"value":"..."} fragments before
+    // parsing — left as-is they make the whole body invalid JSON.
+    const rawBody = await makeResponse.text();
+    payload = JSON.parse(rawBody.replace(WRAPPED_VALUE, '$1'));
   } catch {
     return NextResponse.json(
       { error: 'Resposta inválida do serviço de sincronização.' },
@@ -126,7 +143,7 @@ export async function POST(
 
   // --- Children update, matched in-place by position ---
   const newNames = splitList(payload.CHILD_NAME);
-  const newDobsRaw = splitList(payload.CHILD_DOB);
+  const newDobsRaw = splitList(unwrapDob(payload.CHILD_DOB));
   const newDobs = newDobsRaw.map((d) => parseDateOfBirth(d));
 
   const { data: existingChildren } = await supabase
