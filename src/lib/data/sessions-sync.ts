@@ -6,7 +6,7 @@ type ServerClient = ReturnType<typeof createServerClient>;
  * Parse a date string like "5 (manhã)" into { date: "5", slot: "manhã" }
  */
 function parseDateString(dateStr: string): { date: string; slot: 'manhã' | 'tarde' } | null {
-  const match = dateStr.match(/^(\d+)\s*\((manhã|tarde)\)$/);
+  const match = dateStr.match(/^(\d+)\s*\((manhã|tarde)\)/);
   if (!match) return null;
   return { date: match[1], slot: match[2] as 'manhã' | 'tarde' };
 }

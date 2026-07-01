@@ -95,6 +95,10 @@
   --text-label-md--font-weight: 500;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: "Libre Franklin", sans-serif;
   background-color: var(--color-background);

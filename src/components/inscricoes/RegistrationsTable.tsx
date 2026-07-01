@@ -7,6 +7,8 @@ import { RegistrationRow } from './RegistrationRow';
 import { RegistrationDetail } from './RegistrationDetail';
 
 type SortDir = 'default' | 'asc' | 'desc';
+type OrderDir = 'asc' | 'desc';
+type ActiveSort = 'order' | 'children';
 
 interface Props {
   registrations: RegistrationWithDetails[];
@@ -36,14 +38,33 @@ export function RegistrationsTable({
   onStatusChange,
 }: Props) {
   const [sortDir, setSortDir] = useState<SortDir>('default');
+  const [orderDir, setOrderDir] = useState<OrderDir>('asc');
+  const [activeSort, setActiveSort] = useState<ActiveSort>('order');
+
+  const orderMap = useMemo(() => {
+    const byCreatedAt = [...registrations].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    const map = new Map<string, number>();
+    byCreatedAt.forEach((reg, i) => map.set(reg.id, i + 1));
+    return map;
+  }, [registrations]);
 
   const sorted = useMemo(() => {
-    if (sortDir === 'default') return registrations;
-    return [...registrations].sort((a, b) => {
-      const cmp = childSortKey(a).localeCompare(childSortKey(b), 'pt');
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [registrations, sortDir]);
+    if (activeSort === 'children' && sortDir !== 'default') {
+      return [...registrations].sort((a, b) => {
+        const cmp = childSortKey(a).localeCompare(childSortKey(b), 'pt');
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+    if (activeSort === 'order') {
+      return [...registrations].sort((a, b) => {
+        const cmp = (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0);
+        return orderDir === 'asc' ? cmp : -cmp;
+      });
+    }
+    return registrations;
+  }, [registrations, sortDir, activeSort, orderDir, orderMap]);
 
   if (registrations.length === 0) {
     return (
@@ -56,13 +77,29 @@ export function RegistrationsTable({
   return (
     <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-8px_rgba(0,0,0,0.05)] border border-surface-container-highest">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[900px] table-fixed text-left border-collapse">
           <thead>
             <tr className="border-b border-surface-container-highest bg-surface-container-low">
-              <th className={TH}>Estado</th>
               <th
-                className={`${TH} cursor-pointer select-none hover:text-gray-700`}
-                onClick={() => setSortDir(nextSortDir(sortDir))}
+                className={`py-5 pl-6 pr-3 text-label-sm text-gray-500 uppercase tracking-wider font-medium w-[4%] cursor-pointer select-none hover:text-gray-700`}
+                onClick={() => {
+                  setActiveSort('order');
+                  setOrderDir(orderDir === 'asc' ? 'desc' : 'asc');
+                }}
+              >
+                <span className="inline-flex items-center gap-2">
+                  #
+                  {orderDir === 'asc' && <ArrowUp size={13} className="text-primary" />}
+                  {orderDir === 'desc' && <ArrowDown size={13} className="text-primary" />}
+                </span>
+              </th>
+              <th className={`${TH} w-[12%]`}>Estado</th>
+              <th
+                className={`${TH} w-[18%] cursor-pointer select-none hover:text-gray-700`}
+                onClick={() => {
+                  setActiveSort('children');
+                  setSortDir(nextSortDir(sortDir));
+                }}
               >
                 <span className="inline-flex items-center gap-2">
                   Criança(s)
@@ -73,13 +110,13 @@ export function RegistrationsTable({
                   {sortDir === 'desc' && <ArrowDown size={13} className="text-primary" />}
                 </span>
               </th>
-              <th className={TH}>Idade</th>
-              <th className={TH}>Responsável</th>
-              <th className={TH}>Plano</th>
-              <th className={TH}>Valor</th>
-              <th className={TH}>F.</th>
-              <th className={TH}>V.</th>
-              <th className={`${TH} w-10`} />
+              <th className={`${TH} w-[8%]`}>Idade</th>
+              <th className={`${TH} w-[15%]`}>Responsável</th>
+              <th className={`${TH} w-[17%]`}>Plano</th>
+              <th className={`${TH} w-[8%]`}>Valor</th>
+              <th className={`${TH} w-[5%]`}>F</th>
+              <th className={`${TH} w-[5%]`}>V</th>
+              <th className={`${TH} w-[8%]`} />
             </tr>
           </thead>
           <tbody className="text-body-md text-gray-900">
@@ -87,6 +124,7 @@ export function RegistrationsTable({
               <React.Fragment key={reg.id}>
                 <RegistrationRow
                   registration={reg}
+                  order={orderMap.get(reg.id) ?? 0}
                   isExpanded={expandedId === reg.id}
                   onToggle={() => onToggle(reg.id)}
                 />

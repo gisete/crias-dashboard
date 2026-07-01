@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { parsePlan } from '@/lib/plan-parser';
 import { parseDateOfBirth } from '@/lib/date-parser';
+import { normalizeDateEntry } from '@/lib/date-utils';
 import type { WebhookPayload } from '@/types/webhook';
 import { MONTH_TO_NUMBER } from '@/lib/months';
 
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error', message: 'responsavel_email is required' }, { status: 400 });
   }
 
-  body.datas_selecionadas = normalizeStringArray(body.datas_selecionadas);
+  body.datas_selecionadas = normalizeStringArray(body.datas_selecionadas).map(normalizeDateEntry);
 
   try {
     const supabase = createServerClient();

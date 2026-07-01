@@ -15,11 +15,12 @@ function CheckBadge() {
 
 interface Props {
   registration: RegistrationWithDetails;
+  order: number;
   isExpanded: boolean;
   onToggle: () => void;
 }
 
-export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Props) {
+export function RegistrationRow({ registration: reg, order, isExpanded, onToggle }: Props) {
   const { family, children } = reg;
 
   const childrenLabel = children.map((c) => firstName(c.name)).join(' + ');
@@ -38,6 +39,9 @@ export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Pro
       } ${isExpanded ? 'bg-surface-container-low' : 'bg-surface-container-lowest'}`}
       onClick={onToggle}
     >
+      {/* #. Ordem de inscrição */}
+      <td className="py-6 pl-6 pr-3 text-gray-500 whitespace-nowrap">{order}</td>
+
       {/* 1. Estado */}
       <td className="py-6 px-6">
         <span className={`inline-flex items-center px-4 py-2 rounded-full text-label-md ${STATUS_PILL[reg.status]}`}>
@@ -71,7 +75,7 @@ export function RegistrationRow({ registration: reg, isExpanded, onToggle }: Pro
       </td>
 
       {/* 9. Expand/collapse chevron */}
-      <td className="py-6 pr-6 text-on-surface-variant">
+      <td className="py-6 pl-6 pr-6 text-on-surface-variant">
         {reg.webhook_error && (
           <Warning size={14} weight="fill" className="text-error inline mr-2" />
         )}
