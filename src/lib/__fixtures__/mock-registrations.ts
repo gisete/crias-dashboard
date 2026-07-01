@@ -34,7 +34,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-01T09:00:00Z',
     },
     children: [
-      { id: 'child-001', registration_id: 'reg-001', name: 'Pedro Mendes', date_of_birth: '2023-03-15' },
+      { id: 'child-001', registration_id: 'reg-001', name: 'Pedro Mendes', date_of_birth: '2023-03-15', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -70,8 +70,8 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-02T10:30:00Z',
     },
     children: [
-      { id: 'child-002', registration_id: 'reg-002', name: 'Maria Silva', date_of_birth: '2021-07-20' },
-      { id: 'child-003', registration_id: 'reg-002', name: 'João Silva', date_of_birth: '2019-11-03' },
+      { id: 'child-002', registration_id: 'reg-002', name: 'Maria Silva', date_of_birth: '2021-07-20', created_at: '2026-06-01T09:00:00Z' },
+      { id: 'child-003', registration_id: 'reg-002', name: 'João Silva', date_of_birth: '2019-11-03', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -107,7 +107,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-03T08:15:00Z',
     },
     children: [
-      { id: 'child-004', registration_id: 'reg-003', name: 'Sofia Ferreira', date_of_birth: '2022-05-08' },
+      { id: 'child-004', registration_id: 'reg-003', name: 'Sofia Ferreira', date_of_birth: '2022-05-08', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -143,7 +143,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-04T11:00:00Z',
     },
     children: [
-      { id: 'child-005', registration_id: 'reg-004', name: 'Beatriz Figueiredo', date_of_birth: '2020-09-25' },
+      { id: 'child-005', registration_id: 'reg-004', name: 'Beatriz Figueiredo', date_of_birth: '2020-09-25', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -179,7 +179,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-04T14:20:00Z',
     },
     children: [
-      { id: 'child-006', registration_id: 'reg-005', name: 'Tomás Cardoso', date_of_birth: '2023-01-14' },
+      { id: 'child-006', registration_id: 'reg-005', name: 'Tomás Cardoso', date_of_birth: '2023-01-14', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -215,8 +215,8 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-05T09:45:00Z',
     },
     children: [
-      { id: 'child-007', registration_id: 'reg-006', name: 'Leonor Lopes', date_of_birth: '2021-04-30' },
-      { id: 'child-008', registration_id: 'reg-006', name: 'Martim Lopes', date_of_birth: '2023-08-12' },
+      { id: 'child-007', registration_id: 'reg-006', name: 'Leonor Lopes', date_of_birth: '2021-04-30', created_at: '2026-06-01T09:00:00Z' },
+      { id: 'child-008', registration_id: 'reg-006', name: 'Martim Lopes', date_of_birth: '2023-08-12', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -252,7 +252,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-06T10:00:00Z',
     },
     children: [
-      { id: 'child-009', registration_id: 'reg-007', name: 'Gabriel Rocha', date_of_birth: '2020-02-18' },
+      { id: 'child-009', registration_id: 'reg-007', name: 'Gabriel Rocha', date_of_birth: '2020-02-18', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -288,7 +288,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-06T16:30:00Z',
     },
     children: [
-      { id: 'child-010', registration_id: 'reg-008', name: 'Afonso Almeida', date_of_birth: '2019-06-05' },
+      { id: 'child-010', registration_id: 'reg-008', name: 'Afonso Almeida', date_of_birth: '2019-06-05', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -324,7 +324,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-07T08:00:00Z',
     },
     children: [
-      { id: 'child-011', registration_id: 'reg-009', name: 'Matilde Monteiro', date_of_birth: '2022-10-01' },
+      { id: 'child-011', registration_id: 'reg-009', name: 'Matilde Monteiro', date_of_birth: '2022-10-01', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -360,7 +360,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-08T09:20:00Z',
     },
     children: [
-      { id: 'child-012', registration_id: 'reg-010', name: 'Rodrigo Barros', date_of_birth: '2021-12-20' },
+      { id: 'child-012', registration_id: 'reg-010', name: 'Rodrigo Barros', date_of_birth: '2021-12-20', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -396,7 +396,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-09T13:00:00Z',
     },
     children: [
-      { id: 'child-013', registration_id: 'reg-011', name: 'Alice Pinto', date_of_birth: '2020-08-14' },
+      { id: 'child-013', registration_id: 'reg-011', name: 'Alice Pinto', date_of_birth: '2020-08-14', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -432,7 +432,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-10T10:45:00Z',
     },
     children: [
-      { id: 'child-014', registration_id: 'reg-012', name: 'Margarida Cunha', date_of_birth: '2022-03-07' },
+      { id: 'child-014', registration_id: 'reg-012', name: 'Margarida Cunha', date_of_birth: '2022-03-07', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -468,7 +468,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-11T08:30:00Z',
     },
     children: [
-      { id: 'child-015', registration_id: 'reg-013', name: 'Simão Sousa', date_of_birth: '2023-06-22' },
+      { id: 'child-015', registration_id: 'reg-013', name: 'Simão Sousa', date_of_birth: '2023-06-22', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -504,7 +504,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-12T11:15:00Z',
     },
     children: [
-      { id: 'child-016', registration_id: 'reg-014', name: 'Constança Oliveira', date_of_birth: '2021-09-03' },
+      { id: 'child-016', registration_id: 'reg-014', name: 'Constança Oliveira', date_of_birth: '2021-09-03', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
   {
@@ -540,7 +540,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
       created_at: '2026-06-13T09:00:00Z',
     },
     children: [
-      { id: 'child-017', registration_id: 'reg-015', name: 'Lourenço Matos', date_of_birth: '2019-04-17' },
+      { id: 'child-017', registration_id: 'reg-015', name: 'Lourenço Matos', date_of_birth: '2019-04-17', created_at: '2026-06-01T09:00:00Z' },
     ],
   },
 ];

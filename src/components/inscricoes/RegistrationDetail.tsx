@@ -16,6 +16,7 @@ import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
 import { WebhookErrorBanner } from './WebhookErrorBanner';
 import { DeleteRegistrationButton } from './DeleteRegistrationButton';
+import { ResyncButton } from './ResyncButton';
 
 interface Props {
   registration: RegistrationWithDetails;
@@ -331,7 +332,10 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
             {/* Footer row */}
             <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
               <DeleteRegistrationButton registrationId={reg.id} childNames={childNamesStr} />
-              <StatusActions status={reg.status} onAction={handleStatusChange} />
+              <div className="flex items-center gap-4">
+                <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
+                <StatusActions status={reg.status} onAction={handleStatusChange} />
+              </div>
             </div>
           </div>
         </td>

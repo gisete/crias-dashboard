@@ -53,8 +53,8 @@ export function MonthRow({ month, onChanged }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-between bg-surface-container-lowest rounded-xl border border-surface-container-highest p-6">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-surface-container-lowest rounded-xl border border-surface-container-highest p-6">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-body-lg font-medium text-gray-900">{label}</span>
         <span
           className={`inline-flex items-center px-4 py-2 rounded-full text-label-md ${
@@ -68,7 +68,7 @@ export function MonthRow({ month, onChanged }: Props) {
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         {error && <p className="text-label-sm text-red-500">{error}</p>}
         {month.registrationCount === 0 && (
           <button

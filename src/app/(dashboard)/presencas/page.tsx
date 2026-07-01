@@ -129,7 +129,7 @@ export default function PresencasPage() {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8">
         <h1 className="text-headline-lg text-gray-900">Presenças</h1>
         <MonthSelector
           month={month}

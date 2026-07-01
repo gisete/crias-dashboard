@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { parsePlan } from '@/lib/plan-parser';
+import { parseDateOfBirth } from '@/lib/date-parser';
 import type { WebhookPayload } from '@/types/webhook';
 import { MONTH_TO_NUMBER } from '@/lib/months';
 
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     const dobs = normalizeStringArray(body.criancas_nascimentos);
     const children = names.map((name, i) => ({
       name,
-      dob: dobs[i] || null,
+      dob: dobs[i] ? parseDateOfBirth(dobs[i]) : null,
     }));
 
     const parsed = body.plano ? parsePlan(body.plano) : null;
@@ -177,13 +178,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (children.length > 0) {
-      await supabase.from('children').insert(
+      const { error: childrenError } = await supabase.from('children').insert(
         children.map((c) => ({
           registration_id: registration.id,
           name: c.name,
           date_of_birth: c.dob ?? null,
         })),
       );
+
+      if (childrenError) {
+        await supabase
+          .from('registrations')
+          .update({
+            webhook_error: true,
+            webhook_error_message: `Erro ao guardar crianças: ${childrenError.message}`,
+          })
+          .eq('id', registration.id);
+      }
     }
 
     return NextResponse.json(

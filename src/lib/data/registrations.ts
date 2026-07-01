@@ -1,5 +1,17 @@
 import { supabaseClient } from '@/lib/supabase/client';
-import type { RegistrationWithDetails } from '@/types/database';
+import type { RegistrationWithDetails, Child } from '@/types/database';
+
+export interface ResyncResult {
+  success: boolean;
+  error?: string;
+  updated?: {
+    parentName: string | null;
+    phone: string | null;
+    childrenCount: number;
+  };
+  family?: { parent_name: string; phone: string | null };
+  children?: Child[];
+}
 
 export interface MonthStats {
   total: number;
@@ -222,4 +234,15 @@ export async function updateRegistrationDates(
     body: JSON.stringify({ dates }),
   });
   return { success: res.ok };
+}
+
+export async function resyncRegistration(id: string): Promise<ResyncResult> {
+  const res = await fetch(`/api/registrations/${id}/resync`, { method: 'POST' });
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error ?? 'Erro ao sincronizar.' };
+  }
+
+  return data as ResyncResult;
 }

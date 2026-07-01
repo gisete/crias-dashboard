@@ -116,7 +116,7 @@ export default function InscricoesPage() {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-12">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-12">
         <h1 className="text-headline-lg text-gray-900">Inscrições</h1>
         <div className="flex items-center gap-2">
           <MonthSelector

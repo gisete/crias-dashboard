@@ -40,6 +40,7 @@ export interface Child {
   registration_id: string;
   name: string;
   date_of_birth: string | null;
+  created_at: string;
 }
 
 export interface RegistrationWithDetails extends Registration {
