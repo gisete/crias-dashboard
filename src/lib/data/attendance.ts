@@ -14,6 +14,7 @@ export interface AttendanceChild {
   dateOfBirth: string | null;
   parentName: string;
   present: boolean | null;
+  hasPhotos: boolean;
 }
 
 export interface AttendanceSession {
@@ -80,7 +81,7 @@ export async function fetchAttendanceByDate(
   const { data: childrenData, error: childrenError } = await supabaseClient
     .from('session_children')
     .select(
-      'id, session_id, present, child:children(name, date_of_birth), registration:registrations(family:families(parent_name))',
+      'id, session_id, present, child:children(name, date_of_birth), registration:registrations(has_photos, family:families(parent_name))',
     )
     .in('session_id', sessionIds);
 
@@ -93,7 +94,7 @@ export async function fetchAttendanceByDate(
     session_id: string;
     present: boolean | null;
     child: { name: string; date_of_birth: string | null } | null;
-    registration: { family: { parent_name: string } | null } | null;
+    registration: { has_photos: boolean; family: { parent_name: string } | null } | null;
   }
 
   const rows = (childrenData ?? []) as unknown as Row[];
@@ -109,6 +110,7 @@ export async function fetchAttendanceByDate(
       dateOfBirth: row.child.date_of_birth,
       parentName: row.registration?.family?.parent_name ?? '',
       present: row.present,
+      hasPhotos: row.registration?.has_photos ?? false,
     };
 
     if (!childrenBySession.has(row.session_id)) {

@@ -9,3 +9,24 @@ export function shortName(name: string): string {
   if (parts.length <= 1) return parts[0] || '';
   return `${parts[0]} ${parts[parts.length - 1]}`;
 }
+
+const PORTUGUESE_PARTICLES = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
+
+/**
+ * Returns first word + last surname, keeping a Portuguese connecting
+ * particle (de, da, do, das, dos, e) when it immediately precedes the
+ * last surname: "Afonso Sequeira Vieira da Luz" → "Afonso da Luz"
+ */
+export function shortenName(fullName: string): string {
+  const words = fullName.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 2) return words.join(' ');
+
+  const first = words[0];
+  const last = words[words.length - 1];
+  const beforeLast = words[words.length - 2];
+
+  if (PORTUGUESE_PARTICLES.has(beforeLast.toLowerCase())) {
+    return `${first} ${beforeLast} ${last}`;
+  }
+  return `${first} ${last}`;
+}

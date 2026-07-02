@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   getAvailableMonths,
   getAvailableYears,
@@ -16,31 +16,115 @@ import {
   markAttendance,
   type SessionDate,
   type AttendanceSession,
+  type AttendanceChild,
 } from '@/lib/data/attendance';
 import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
+import { getTodayLisbon } from '@/lib/date-utils';
+
+// Unmarked children first, marked (present or absent) children last, each
+// group keeping the original fetch order — so marking a child slides it
+// down instead of reshuffling by "most recently marked".
+function sortByMarkedLast(children: AttendanceChild[]): AttendanceChild[] {
+  return children
+    .map((child, index) => ({ child, index }))
+    .sort((a, b) => {
+      const aMarked = a.child.present !== null && a.child.present !== undefined;
+      const bMarked = b.child.present !== null && b.child.present !== undefined;
+      if (aMarked !== bMarked) return aMarked ? 1 : -1;
+      return a.index - b.index;
+    })
+    .map(({ child }) => child);
+}
+
+// FLIP animation: on every render where `order` changes, slide each card
+// from its previous position to its new one instead of teleporting.
+function useFlipAnimation(order: string[]) {
+  const elementsRef = useRef(new Map<string, HTMLDivElement>());
+  const rectsRef = useRef(new Map<string, DOMRect>());
+
+  useLayoutEffect(() => {
+    const prevRects = rectsRef.current;
+    const nextRects = new Map<string, DOMRect>();
+
+    elementsRef.current.forEach((el, key) => {
+      nextRects.set(key, el.getBoundingClientRect());
+    });
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!prefersReducedMotion) {
+      elementsRef.current.forEach((el, key) => {
+        const prev = prevRects.get(key);
+        const next = nextRects.get(key);
+        if (!prev || !next) return;
+
+        const dx = prev.left - next.left;
+        const dy = prev.top - next.top;
+        if (dx === 0 && dy === 0) return;
+
+        el.style.transition = 'none';
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        el.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          el.style.transition = 'transform 300ms ease-in-out';
+          el.style.transform = '';
+        });
+      });
+    }
+
+    rectsRef.current = nextRects;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order.join('|')]);
+
+  return useCallback(
+    (key: string) => (el: HTMLDivElement | null) => {
+      if (el) elementsRef.current.set(key, el);
+      else elementsRef.current.delete(key);
+    },
+    [],
+  );
+}
+
+interface SlotGridProps {
+  sessionChildren: AttendanceChild[];
+  onMark: (sessionChildId: string, present: boolean | null) => void;
+}
+
+function SlotGrid({ sessionChildren, onMark }: SlotGridProps) {
+  const sorted = useMemo(() => sortByMarkedLast(sessionChildren), [sessionChildren]);
+  const registerRef = useFlipAnimation(sorted.map((c) => c.sessionChildId));
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {sorted.map((child) => (
+        <AttendanceCard
+          key={child.sessionChildId}
+          ref={registerRef(child.sessionChildId)}
+          child={child}
+          onMark={onMark}
+        />
+      ))}
+    </div>
+  );
+}
 
 function pickDefaultDate(dates: SessionDate[], month: string, year: number): string | null {
   if (dates.length === 0) return null;
 
-  const now = new Date();
-  const isCurrentMonth = MONTH_TO_NUMBER[month] === now.getMonth() + 1 && year === now.getFullYear();
+  const [todayYear, todayMonth, todayDay] = getTodayLisbon().split('-').map(Number);
+  const isCurrentMonth = MONTH_TO_NUMBER[month] === todayMonth && year === todayYear;
 
   if (!isCurrentMonth) return dates[0].date;
 
-  const todayDay = now.getDate();
   const exact = dates.find((d) => parseInt(d.date, 10) === todayDay);
   if (exact) return exact.date;
 
-  let nearest = dates[0];
-  let minDiff = Math.abs(parseInt(dates[0].date, 10) - todayDay);
-  for (const d of dates.slice(1)) {
-    const diff = Math.abs(parseInt(d.date, 10) - todayDay);
-    if (diff < minDiff) {
-      minDiff = diff;
-      nearest = d;
-    }
-  }
-  return nearest.date;
+  const next = dates.find((d) => parseInt(d.date, 10) > todayDay);
+  if (next) return next.date;
+
+  return dates[dates.length - 1].date;
 }
 
 export default function PresencasPage() {
@@ -205,15 +289,7 @@ export default function PresencasPage() {
                         {presentCount}/{session.children.length} presentes
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {session.children.map((child) => (
-                        <AttendanceCard
-                          key={child.sessionChildId}
-                          child={child}
-                          onMark={handleMark}
-                        />
-                      ))}
-                    </div>
+                    <SlotGrid sessionChildren={session.children} onMark={handleMark} />
                   </div>
                 );
               })}

@@ -1,7 +1,9 @@
 'use client';
 
-import { Check, X } from '@phosphor-icons/react';
+import { forwardRef } from 'react';
+import { Camera, Check, X } from '@phosphor-icons/react';
 import { calculateAge } from '@/lib/age-calculator';
+import { shortenName } from '@/lib/name-utils';
 import type { AttendanceChild } from '@/lib/data/attendance';
 
 interface Props {
@@ -9,7 +11,10 @@ interface Props {
   onMark: (sessionChildId: string, present: boolean | null) => void;
 }
 
-export function AttendanceCard({ child, onMark }: Props) {
+export const AttendanceCard = forwardRef<HTMLDivElement, Props>(function AttendanceCard(
+  { child, onMark },
+  ref,
+) {
   const { present } = child;
 
   function handlePresente() {
@@ -28,16 +33,21 @@ export function AttendanceCard({ child, onMark }: Props) {
       : 'border border-surface-container-highest';
 
   return (
-    <div className={`bg-white rounded-xl p-4 flex flex-col gap-3 ${borderClass}`}>
-      <div className={present === false ? 'opacity-60' : ''}>
-        <p className="text-body-md font-medium text-gray-900">{child.childName}</p>
-        {child.dateOfBirth && (
-          <p className="text-label-md text-gray-500">{calculateAge(child.dateOfBirth)}</p>
-        )}
-        <p className="text-label-md text-gray-400">{child.parentName}</p>
+    <div ref={ref} className={`bg-white rounded-xl p-4 flex flex-col h-full ${borderClass}`}>
+      <div className={`flex justify-between items-start gap-3 ${present === false ? 'opacity-60' : ''}`}>
+        <div className="min-w-0">
+          <p className="text-body-lg font-medium text-gray-900">{shortenName(child.childName)}</p>
+          <p className="text-[13px] text-gray-500">{shortenName(child.parentName)}</p>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {child.dateOfBirth && (
+            <p className="text-[13px] text-gray-500 whitespace-nowrap">{calculateAge(child.dateOfBirth)}</p>
+          )}
+          {child.hasPhotos && <Camera size={18} className="text-sky-500" />}
+        </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-auto pt-3">
         <button
           onClick={handlePresente}
           className={`flex-1 min-h-11 flex items-center justify-center gap-1.5 rounded-lg text-label-md transition-colors touch-manipulation select-none ${
@@ -63,4 +73,4 @@ export function AttendanceCard({ child, onMark }: Props) {
       </div>
     </div>
   );
-}
+});
