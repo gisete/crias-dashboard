@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
-import { Libre_Franklin } from 'next/font/google';
+import { Nunito_Sans } from 'next/font/google';
 import './globals.css';
 
-const libreFranklin = Libre_Franklin({ subsets: ['latin'], variable: '--font-body' });
+const nunitoSans = Nunito_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-body',
+});
 
 export const metadata: Metadata = {
   title: 'Crias na Floresta — Gestão',
@@ -11,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt" className={libreFranklin.variable}>
+    <html lang="pt" className={nunitoSans.variable}>
       <body className="min-h-screen bg-background text-on-surface font-body">
         {children}
       </body>

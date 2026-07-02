@@ -2,7 +2,7 @@
 
 @theme {
   /* ── Fonts ── */
-  --font-body: "Libre Franklin", sans-serif;
+  --font-body: "Nunito Sans", sans-serif;
 
   /* ── Colors ── */
   --color-primary: #0f5238;
@@ -100,7 +100,7 @@ html {
 }
 
 body {
-  font-family: "Libre Franklin", sans-serif;
+  font-family: "Nunito Sans", sans-serif;
   background-color: var(--color-background);
   color: var(--color-on-surface);
 }

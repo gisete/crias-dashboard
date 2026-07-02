@@ -77,7 +77,7 @@ export function RegistrationsTable({
   return (
     <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-8px_rgba(0,0,0,0.05)] border border-surface-container-highest">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] table-fixed text-left border-collapse">
+        <table className="w-full min-w-[900px] table-fixed text-left border-collapse [font-variant-numeric:tabular-nums]">
           <thead>
             <tr className="border-b border-surface-container-highest bg-surface-container-low">
               <th
