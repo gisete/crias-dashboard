@@ -1,4 +1,4 @@
-import { normalizeDateEntry } from '../date-utils';
+import { normalizeDateEntry, getTodayLisbon } from '../date-utils';
 
 describe('normalizeDateEntry', () => {
   it('strips trailing text after the slot parenthesis', () => {
@@ -19,5 +19,11 @@ describe('normalizeDateEntry', () => {
 
   it('returns unrecognized strings unchanged', () => {
     expect(normalizeDateEntry('invalid string')).toBe('invalid string');
+  });
+});
+
+describe('getTodayLisbon', () => {
+  it('returns a YYYY-MM-DD string', () => {
+    expect(getTodayLisbon()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

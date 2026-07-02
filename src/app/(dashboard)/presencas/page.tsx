@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getAvailableMonths,
   getAvailableYears,
+  getCurrentActiveMonth,
   getLatestActiveMonth,
 } from '@/lib/data/registrations';
 import { MONTH_NAMES, MONTH_TO_NUMBER } from '@/lib/months';
@@ -63,16 +64,24 @@ export default function PresencasPage() {
   }, [selectedDate, sessionDates]);
 
   useEffect(() => {
-    getLatestActiveMonth().then((result) => {
-      if (result) {
-        setMonth(MONTH_NAMES[result.month - 1]);
-        setYear(result.year);
-      } else {
-        const now = new Date();
-        setMonth(MONTH_NAMES[now.getMonth()]);
-        setYear(now.getFullYear());
+    async function loadDefaultMonth() {
+      const current = await getCurrentActiveMonth();
+      if (current) {
+        setMonth(MONTH_NAMES[current.month - 1]);
+        setYear(current.year);
+        return;
       }
-    });
+      const latest = await getLatestActiveMonth();
+      if (latest) {
+        setMonth(MONTH_NAMES[latest.month - 1]);
+        setYear(latest.year);
+        return;
+      }
+      const now = new Date();
+      setMonth(MONTH_NAMES[now.getMonth()]);
+      setYear(now.getFullYear());
+    }
+    loadDefaultMonth();
   }, []);
 
   const refreshAvailableMonths = useCallback(async () => {

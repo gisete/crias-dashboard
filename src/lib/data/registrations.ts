@@ -1,5 +1,6 @@
 import { supabaseClient } from '@/lib/supabase/client';
 import type { RegistrationWithDetails, Child } from '@/types/database';
+import { getTodayLisbon } from '@/lib/date-utils';
 
 export interface ResyncResult {
   success: boolean;
@@ -139,6 +140,21 @@ export async function getLatestActiveMonth(): Promise<{ month: number; year: num
     .order('year', { ascending: false })
     .order('month', { ascending: false })
     .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return { year: data.year, month: data.month };
+}
+
+export async function getCurrentActiveMonth(): Promise<{ month: number; year: number } | null> {
+  const [year, month] = getTodayLisbon().split('-').map(Number);
+
+  const { data, error } = await supabaseClient
+    .from('months')
+    .select('year, month')
+    .eq('status', 'active')
+    .eq('year', year)
+    .eq('month', month)
     .maybeSingle();
 
   if (error || !data) return null;

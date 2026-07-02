@@ -7,9 +7,11 @@ import { fetchSessionsByMonth } from '@/lib/data/sessions';
 import {
   getAvailableMonths,
   getAvailableYears,
+  getCurrentActiveMonth,
   getLatestActiveMonth,
 } from '@/lib/data/registrations';
 import { MONTH_NAMES } from '@/lib/months';
+import { getTodayLisbon } from '@/lib/date-utils';
 import { MonthSelector } from '@/components/inscricoes/MonthSelector';
 import { AddMonthButton } from '@/components/inscricoes/AddMonthButton';
 import { SessionSearch } from '@/components/sessoes/SessionSearch';
@@ -26,16 +28,24 @@ export default function SessoesPage() {
   const [monthsByYear, setMonthsByYear] = useState<Record<number, number[]>>({});
 
   useEffect(() => {
-    getLatestActiveMonth().then((result) => {
-      if (result) {
-        setMonth(MONTH_NAMES[result.month - 1]);
-        setYear(result.year);
-      } else {
-        const now = new Date();
-        setMonth(MONTH_NAMES[now.getMonth()]);
-        setYear(now.getFullYear());
+    async function loadDefaultMonth() {
+      const current = await getCurrentActiveMonth();
+      if (current) {
+        setMonth(MONTH_NAMES[current.month - 1]);
+        setYear(current.year);
+        return;
       }
-    });
+      const latest = await getLatestActiveMonth();
+      if (latest) {
+        setMonth(MONTH_NAMES[latest.month - 1]);
+        setYear(latest.year);
+        return;
+      }
+      const now = new Date();
+      setMonth(MONTH_NAMES[now.getMonth()]);
+      setYear(now.getFullYear());
+    }
+    loadDefaultMonth();
   }, []);
 
   const refreshAvailableMonths = useCallback(async () => {
@@ -90,6 +100,18 @@ export default function SessoesPage() {
     return confirmed.filter((c) => c.childName.toLowerCase().includes(q));
   }
 
+  const today = getTodayLisbon();
+
+  const upcomingSessions = useMemo(
+    () => visibleSessions.filter((s) => s.date >= today),
+    [visibleSessions, today],
+  );
+
+  const pastSessions = useMemo(
+    () => visibleSessions.filter((s) => s.date < today).slice().reverse(),
+    [visibleSessions, today],
+  );
+
   if (!month || !year) return null;
 
   return (
@@ -126,14 +148,37 @@ export default function SessoesPage() {
           <p className="text-body-lg text-gray-500">Nenhuma sessão encontrada.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          {visibleSessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              displayChildren={getDisplayChildren(session)}
-            />
-          ))}
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4">
+            {upcomingSessions.length > 0 && (
+              <h2 className="text-title-lg text-gray-500">Próximas sessões</h2>
+            )}
+            {upcomingSessions.length > 0 ? (
+              upcomingSessions.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  displayChildren={getDisplayChildren(session)}
+                  isToday={session.date === today}
+                />
+              ))
+            ) : pastSessions.length > 0 ? (
+              <p className="text-body-md text-gray-500">Sem sessões futuras neste mês</p>
+            ) : null}
+          </div>
+
+          {pastSessions.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <h2 className="text-title-lg text-gray-500">Sessões passadas</h2>
+              {pastSessions.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  displayChildren={getDisplayChildren(session)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>

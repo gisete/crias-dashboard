@@ -17,9 +17,10 @@ function formatSessionDate(isoDate: string): string {
 interface Props {
   session: Session;
   displayChildren: SessionChild[];
+  isToday?: boolean;
 }
 
-export function SessionCard({ session, displayChildren }: Props) {
+export function SessionCard({ session, displayChildren, isToday }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const confirmedCount = session.children.filter(
@@ -41,6 +42,11 @@ export function SessionCard({ session, displayChildren }: Props) {
           <span className={`px-3 py-1 rounded-full text-label-md shrink-0 ${SLOT_PILL[session.slot]}`}>
             {SLOT_LABEL[session.slot]}
           </span>
+          {isToday && (
+            <span className="px-3 py-1 rounded-full text-label-md shrink-0 bg-gray-100 text-gray-600">
+              Hoje
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 sm:gap-5 shrink-0 ml-3 sm:ml-6">
           <span className="text-body-md text-gray-500 font-normal whitespace-nowrap">
