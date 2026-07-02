@@ -192,6 +192,32 @@ export async function updateRegistration(
   return { success: !error };
 }
 
+export async function updateFamily(
+  id: string,
+  updates: Record<string, unknown>
+): Promise<{ success: boolean }> {
+  const { error } = await supabaseClient
+    .from('families')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) console.error('updateFamily error:', error);
+  return { success: !error };
+}
+
+export async function updateChild(
+  id: string,
+  updates: Record<string, unknown>
+): Promise<{ success: boolean }> {
+  const { error } = await supabaseClient
+    .from('children')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) console.error('updateChild error:', error);
+  return { success: !error };
+}
+
 export async function deleteRegistration(
   registrationId: string,
 ): Promise<{ success: boolean; error?: string }> {

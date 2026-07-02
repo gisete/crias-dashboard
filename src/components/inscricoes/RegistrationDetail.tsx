@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Envelope, Phone, PencilSimple, Check, X } from '@phosphor-icons/react';
+import { PencilSimple, Check, X } from '@phosphor-icons/react';
 import type { RegistrationWithDetails, RegistrationStatus, Child } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
@@ -10,6 +10,8 @@ import {
   updateRegistration,
   updateRegistrationStatus,
   updateRegistrationDates,
+  updateFamily,
+  updateChild,
 } from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
 import { InlineEditField } from './InlineEditField';
@@ -35,6 +37,27 @@ function formatChildNames(children: Child[]): string {
   if (children.length === 0) return '';
   if (children.length === 1) return children[0].name;
   return `${children.slice(0, -1).map((c) => c.name).join(', ')} e ${children[children.length - 1].name}`;
+}
+
+function formatPlanBreakdown(unitPrice: number, numSessions: number): string {
+  const parts = [`${unitPrice}€`, numSessions === 1 ? '1 sessão' : `${numSessions} sessões`];
+  if (numSessions > 1) {
+    const perSession = (unitPrice / numSessions).toLocaleString('pt-PT', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    parts.push(`${perSession}€/sessão`);
+  }
+  return parts.join(' · ');
+}
+
+function Field({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">{label}</span>
+      <span className="text-body-md text-gray-900">{value}</span>
+    </div>
+  );
 }
 
 export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange }: Props) {
@@ -66,6 +89,19 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   async function handleSave(fieldName: string, value: string) {
     await updateRegistration(reg.id, { [fieldName]: value });
     onUpdate(reg.id, { [fieldName]: value });
+  }
+
+  async function handleFamilySave(fieldName: string, value: string) {
+    await updateFamily(family.id, { [fieldName]: value });
+    onUpdate(reg.id, { family: { ...family, [fieldName]: value } });
+  }
+
+  async function handleChildSave(childId: string, fieldName: string, value: string) {
+    await updateChild(childId, { [fieldName]: value });
+    const newChildren = children.map((c) =>
+      c.id === childId ? { ...c, [fieldName]: value } : c,
+    );
+    onUpdate(reg.id, { children: newChildren });
   }
 
   async function handlePlanSave(_fieldName: string, value: string) {
@@ -134,122 +170,119 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
             {/* The parent cell is always ≥900px (table min-w), so use a fixed
                 3-column layout — viewport breakpoints would collapse this to
                 one stretched column on phones. */}
-            <div className="grid grid-cols-3 gap-16">
-              {/* Left — Estado, Contacto & Crianças */}
-              <div className="flex flex-col gap-10">
-                <div>
-                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">Estado</h4>
-                  <div ref={statusRef} className="relative">
-                    <button
-                      onClick={() => setStatusOpen((o) => !o)}
-                      className="group flex items-center justify-between w-full text-left cursor-pointer"
-                    >
-                      <span className="text-body-lg font-medium text-gray-900">
-                        {STATUS_LABELS[reg.status]}
-                      </span>
-                      <PencilSimple
-                        size={14}
-                        className="text-gray-400 group-hover:text-gray-900 transition-colors shrink-0"
-                      />
-                    </button>
-
-                    {statusOpen && (
-                      <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-surface-container-highest z-50 py-1">
-                        {ALL_STATUSES.map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => handleStatusSelect(s)}
-                            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-surface-container-low transition-colors"
-                          >
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-label-md ${STATUS_PILL[s]}`}>
-                              {STATUS_LABELS[s]}
-                            </span>
-                            {s === reg.status && (
-                              <Check size={14} weight="bold" className="text-primary shrink-0" />
-                            )}
-                          </button>
-                        ))}
+            <div className="grid grid-cols-3 gap-6">
+              {/* Column 1 — Crianças, Responsável, Contacto, Estado */}
+              <div className="flex flex-col h-full">
+                <div className="flex flex-col gap-3 mb-6">
+                  {children.map((child) => (
+                    <div key={child.id} className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-body-md font-medium text-gray-500 shrink-0">
+                        {child.name.charAt(0)}
                       </div>
-                    )}
-                  </div>
+                      <div className="flex flex-col">
+                        <InlineEditField
+                          value={child.name}
+                          fieldName="name"
+                          valueClassName="text-body-lg font-medium text-gray-900"
+                          onSave={(fieldName, value) => handleChildSave(child.id, fieldName, value)}
+                        />
+                        {child.date_of_birth && (
+                          <InlineEditField
+                            value={child.date_of_birth}
+                            fieldName="date_of_birth"
+                            type="date"
+                            displayValue={
+                              <span className="text-label-md font-medium text-gray-500">
+                                {calculateAge(child.date_of_birth)} · {formatDate(child.date_of_birth)}
+                              </span>
+                            }
+                            onSave={(fieldName, value) => handleChildSave(child.id, fieldName, value)}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div>
-                  <p className="text-body-lg text-gray-900 mb-2">{family.parent_name}</p>
-                  <a
-                    href={`mailto:${family.email}`}
-                    className="flex items-center gap-3 text-gray-600 hover:text-gray-900 hover:underline text-body-md mb-2 transition-colors"
-                  >
-                    <Envelope size={14} />
-                    {family.email}
-                  </a>
-                  {family.phone && (
-                    <p className="flex items-center gap-3 text-gray-600 text-body-md">
-                      <Phone size={14} />
-                      {family.phone}
-                    </p>
-                  )}
+                <div className="flex flex-col gap-4">
+                  <InlineEditField
+                    label="Responsável"
+                    value={family.parent_name}
+                    fieldName="parent_name"
+                    onSave={handleFamilySave}
+                  />
+                  <Field
+                    label="Email"
+                    value={
+                      <a href={`mailto:${family.email}`} className="hover:underline">
+                        {family.email}
+                      </a>
+                    }
+                  />
+                  <InlineEditField
+                    label="Telefone"
+                    value={family.phone}
+                    fieldName="phone"
+                    onSave={handleFamilySave}
+                  />
                 </div>
 
-                <div>
-                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">Crianças</h4>
-                  <div className="flex flex-col gap-4">
-                    {children.map((child) => (
-                      <div key={child.id} className="flex items-center gap-5">
-                        <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-gray-600 text-title-lg font-semibold shrink-0">
-                          {child.name.charAt(0)}
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-body-lg text-gray-900">{child.name}</span>
-                          {child.date_of_birth && (
-                            <>
-                              <span className="text-body-md text-gray-600">
-                                {calculateAge(child.date_of_birth)}
+                <div className="mt-auto pt-4">
+                  <div>
+                    <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">Estado</span>
+                    <div ref={statusRef} className="relative">
+                      <button
+                        onClick={() => setStatusOpen((o) => !o)}
+                        className="group inline-flex items-center gap-1.5 text-left cursor-pointer"
+                      >
+                        <span className="text-body-md text-gray-900">
+                          {STATUS_LABELS[reg.status]}
+                        </span>
+                        <PencilSimple
+                          size={14}
+                          className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        />
+                      </button>
+
+                      {statusOpen && (
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-surface-container-highest z-50 py-1">
+                          {ALL_STATUSES.map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => handleStatusSelect(s)}
+                              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-surface-container-low transition-colors"
+                            >
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-label-md ${STATUS_PILL[s]}`}>
+                                {STATUS_LABELS[s]}
                               </span>
-                              <span className="text-label-md text-on-surface-variant">
-                                {formatDate(child.date_of_birth)}
-                              </span>
-                            </>
-                          )}
+                              {s === reg.status && (
+                                <Check size={14} weight="bold" className="text-primary shrink-0" />
+                              )}
+                            </button>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Middle — Plano & Sessões */}
-              <div className="flex flex-col gap-10">
+              {/* Column 2 — Escolha & Sessões agendadas */}
+              <div className="flex flex-col gap-4">
                 <div>
-                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">Inscrição</h4>
-                  <div className="flex flex-col gap-3">
-                    <InlineEditField
-                      label="Escolha"
-                      value={reg.plan}
-                      fieldName="plan"
-                      onSave={handlePlanSave}
-                    />
-                    <div className="flex items-center gap-4">
-                      <span className="text-title-lg text-gray-900">{reg.total_price}€</span>
-                      <span className="text-body-md text-gray-600">
-                        {reg.num_children === 1 ? '1 Criança' : `${reg.num_children} Crianças`}
-                      </span>
-                    </div>
-                  </div>
+                  <InlineEditField
+                    label="Escolha"
+                    value={reg.plan}
+                    fieldName="plan"
+                    onSave={handlePlanSave}
+                  />
+                  <span className="block mt-1 text-label-md text-gray-500">
+                    {formatPlanBreakdown(reg.unit_price, reg.num_sessions)}
+                  </span>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-label-sm text-gray-400 uppercase tracking-wider">Sessões Agendadas</h4>
-                    {!editingDates && (
-                      <button
-                        onClick={() => { setDatesDraft(reg.selected_dates.join(', ')); setEditingDates(true); }}
-                        className="text-gray-400 hover:text-gray-900 transition-colors"
-                      >
-                        <PencilSimple size={14} />
-                      </button>
-                    )}
-                  </div>
+                  <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">Sessões agendadas</span>
                   {editingDates ? (
                     <div className="flex items-start gap-2">
                       <input
@@ -273,62 +306,60 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-3">
-                      {reg.selected_dates.map((date) => (
-                        <span
-                          key={date}
-                          className="px-4 py-2 rounded-full bg-surface-container text-label-sm text-gray-900"
-                        >
-                          {date}
-                        </span>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => { setDatesDraft(reg.selected_dates.join(', ')); setEditingDates(true); }}
+                      className="group flex flex-wrap items-center gap-2 w-fit text-left -mx-1.5 -my-0.5 px-1.5 py-0.5 rounded-md hover:bg-surface-container-low transition-colors cursor-pointer"
+                    >
+                      {reg.selected_dates.length > 0 ? (
+                        reg.selected_dates.map((date) => (
+                          <span
+                            key={date}
+                            className="px-3 py-1 rounded-full bg-surface-container text-label-md text-gray-900"
+                          >
+                            {date}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-body-md text-gray-400">—</span>
+                      )}
+                      <PencilSimple
+                        size={14}
+                        className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      />
+                    </button>
                   )}
                 </div>
               </div>
 
-              {/* Right — Detalhes Administrativos & Notas */}
-              <div className="flex flex-col gap-10">
-                <div>
-                  <h4 className="text-label-sm text-gray-400 uppercase mb-4 tracking-wider">
-                    Detalhes Administrativos
-                  </h4>
-                  <div className="flex flex-col gap-6">
-                    <InlineEditField
-                      label="NIF"
-                      value={reg.nif}
-                      fieldName="nif"
-                      onSave={handleSave}
-                    />
-                    <InlineEditField
-                      label="Voucher"
-                      value={reg.voucher_code}
-                      fieldName="voucher_code"
-                      onSave={handleSave}
-                    />
-                    <InlineEditField
-                      label="Consentimento Imagem"
-                      value={reg.image_consent}
-                      fieldName="image_consent"
-                      type="select"
-                      options={IMAGE_CONSENT_OPTIONS}
-                      onSave={handleSave}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-label-sm text-gray-400 block mb-2 tracking-wider uppercase">
-                    Notas Internas
-                  </span>
-                  <InlineEditField
-                    label=""
-                    value={reg.notes}
-                    fieldName="notes"
-                    type="textarea"
-                    onSave={handleSave}
-                  />
-                </div>
+              {/* Column 3 — NIF, Voucher, Consentimento, Notas */}
+              <div className="flex flex-col gap-4">
+                <InlineEditField
+                  label="NIF"
+                  value={reg.nif}
+                  fieldName="nif"
+                  onSave={handleSave}
+                />
+                <InlineEditField
+                  label="Voucher"
+                  value={reg.voucher_code}
+                  fieldName="voucher_code"
+                  onSave={handleSave}
+                />
+                <InlineEditField
+                  label="Consentimento imagem"
+                  value={reg.image_consent}
+                  fieldName="image_consent"
+                  type="select"
+                  options={IMAGE_CONSENT_OPTIONS}
+                  onSave={handleSave}
+                />
+                <InlineEditField
+                  label="Notas internas"
+                  value={reg.notes}
+                  fieldName="notes"
+                  type="textarea"
+                  onSave={handleSave}
+                />
               </div>
             </div>
 

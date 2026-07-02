@@ -1,18 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { PencilSimple, Check, X } from '@phosphor-icons/react';
 
 interface Props {
-  label: string;
+  label?: string;
   value: string | null;
   fieldName: string;
-  type?: 'text' | 'select' | 'textarea';
+  type?: 'text' | 'select' | 'textarea' | 'date';
   options?: string[];
   onSave: (fieldName: string, value: string) => Promise<void>;
+  /** Custom rendering for the display-mode value (e.g. a derived age line). */
+  displayValue?: ReactNode;
+  /** Overrides the default text classes for the plain-text display value. */
+  valueClassName?: string;
 }
 
-export function InlineEditField({ label, value, fieldName, type = 'text', options, onSave }: Props) {
+export function InlineEditField({
+  label,
+  value,
+  fieldName,
+  type = 'text',
+  options,
+  onSave,
+  displayValue,
+  valueClassName = 'text-body-md text-gray-900',
+}: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
   const [saving, setSaving] = useState(false);
@@ -29,12 +42,17 @@ export function InlineEditField({ label, value, fieldName, type = 'text', option
     setEditing(false);
   }
 
-  const displayValue = value || null;
+  function startEditing() {
+    setDraft(value ?? '');
+    setEditing(true);
+  }
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-2">
-        <span className="text-label-sm text-gray-500">{label}</span>
+      <div>
+        {label && (
+          <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">{label}</span>
+        )}
         <div className="flex items-start gap-2">
           {type === 'textarea' ? (
             <textarea
@@ -56,6 +74,14 @@ export function InlineEditField({ label, value, fieldName, type = 'text', option
                 <option key={o} value={o}>{o}</option>
               ))}
             </select>
+          ) : type === 'date' ? (
+            <input
+              type="date"
+              className="flex-1 text-body-md border border-surface-container-highest rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              autoFocus
+            />
           ) : (
             <input
               type="text"
@@ -84,20 +110,26 @@ export function InlineEditField({ label, value, fieldName, type = 'text', option
   }
 
   return (
-    <button
-      onClick={() => setEditing(true)}
-      className="group flex items-center justify-between w-full text-left cursor-pointer"
-    >
-      <div className="flex flex-col gap-1">
-        <span className="text-label-sm text-gray-500">{label}</span>
-        {displayValue && (
-          <span className="text-body-lg font-medium text-gray-900">{displayValue}</span>
+    <div>
+      {label && (
+        <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">{label}</span>
+      )}
+      <button
+        onClick={startEditing}
+        className="group inline-flex items-center gap-1.5 w-fit text-left -mx-1.5 -my-0.5 px-1.5 py-0.5 rounded-md hover:bg-surface-container-low transition-colors cursor-pointer"
+      >
+        {displayValue ? (
+          displayValue
+        ) : value ? (
+          <span className={valueClassName}>{value}</span>
+        ) : (
+          <span className="text-body-md text-gray-400">—</span>
         )}
-      </div>
-      <PencilSimple
-        size={14}
-        className="text-gray-400 group-hover:text-gray-900 transition-colors shrink-0"
-      />
-    </button>
+        <PencilSimple
+          size={14}
+          className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        />
+      </button>
+    </div>
   );
 }
