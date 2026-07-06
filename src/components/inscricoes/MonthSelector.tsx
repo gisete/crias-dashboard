@@ -140,7 +140,7 @@ export function MonthSelector({
   return (
     <div ref={containerRef} className="relative">
       {/* ── Pill ── */}
-      <div className="flex items-center justify-between gap-1 bg-surface-container-lowest border border-surface-container-highest rounded-full p-2 shadow-sm">
+      <div className="flex items-center justify-between gap-1 bg-surface-container-lowest border border-surface-container-highest rounded-full p-1.5 md:p-2 shadow-sm">
         <button
           onClick={prev}
           disabled={!prevTarget}
@@ -151,7 +151,7 @@ export function MonthSelector({
         </button>
         <button
           onClick={() => setIsOpen((o) => !o)}
-          className="flex-1 text-body-md font-medium px-2 text-gray-900 min-w-[120px] text-center hover:text-primary transition-colors"
+          className="flex-1 text-[13px] md:text-body-md font-medium px-2 text-gray-900 md:min-w-[120px] text-center hover:text-primary transition-colors whitespace-nowrap"
         >
           {label}
         </button>

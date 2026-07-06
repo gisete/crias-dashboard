@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main content */}
       <div className="flex-1 min-w-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-container-highest flex justify-between items-center w-full px-4 sm:px-8 py-4">
+        <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-container-highest flex justify-between items-center w-full px-4 sm:px-8 py-3 md:py-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileNavOpen(true)}
@@ -60,11 +60,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <List size={22} />
             </button>
-            <span className="md:hidden text-headline-md font-semibold text-gray-900">
+            <span className="md:hidden text-[17px] font-medium text-gray-900">
               Crias na Floresta
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <button className="text-gray-500 hover:text-gray-900 transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container">
               <Bell size={20} />
             </button>
@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 pt-2 pb-4 px-4 sm:p-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
       </div>

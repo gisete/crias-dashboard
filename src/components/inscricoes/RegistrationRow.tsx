@@ -44,7 +44,7 @@ export function RegistrationRow({ registration: reg, order, isExpanded, onToggle
 
       {/* 1. Estado */}
       <td className="py-6 px-6">
-        <span className={`inline-flex items-center px-4 py-2 rounded-full text-label-md ${STATUS_PILL[reg.status]}`}>
+        <span className={`inline-flex items-center px-4 py-2 rounded-full text-label-md whitespace-nowrap ${STATUS_PILL[reg.status]}`}>
           {STATUS_LABELS[reg.status]}
         </span>
       </td>

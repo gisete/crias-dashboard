@@ -40,7 +40,7 @@ export default function MesesPage() {
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8 sm:mb-12">
-        <h1 className="text-headline-lg text-gray-900">Meses</h1>
+        <h1 className="text-headline-md md:text-headline-lg text-gray-900">Meses</h1>
         <AddMonthButton existingMonths={existingMonths} onCreated={refetch} />
       </div>
 
