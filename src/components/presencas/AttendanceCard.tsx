@@ -4,6 +4,8 @@ import { forwardRef } from 'react';
 import { Camera, Check, X } from '@phosphor-icons/react';
 import { calculateAge } from '@/lib/age-calculator';
 import { shortenName } from '@/lib/name-utils';
+import { formatSessionValue } from '@/lib/plan-display';
+import { ConsentIcon } from '@/components/sessoes/ConsentIcon';
 import type { AttendanceChild } from '@/lib/data/attendance';
 
 interface Props {
@@ -34,16 +36,32 @@ export const AttendanceCard = forwardRef<HTMLDivElement, Props>(function Attenda
 
   return (
     <div ref={ref} className={`bg-white rounded-xl p-4 flex flex-col h-full ${borderClass}`}>
-      <div className={`flex justify-between items-start gap-3 ${present === false ? 'opacity-60' : ''}`}>
-        <div className="min-w-0">
-          <p className="text-body-lg font-medium text-gray-900">{shortenName(child.childName)}</p>
-          <p className="text-[13px] text-gray-500">{shortenName(child.parentName)}</p>
+      <div className={present === false ? 'opacity-60' : ''}>
+        <div className="flex justify-between items-start gap-3">
+          <div className="min-w-0">
+            <p className="text-body-lg font-medium text-gray-900">{shortenName(child.childName)}</p>
+            <p className="text-[13px] text-gray-500">{shortenName(child.parentName)}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {child.dateOfBirth && (
+              <p className="text-[13px] text-gray-500 whitespace-nowrap">{calculateAge(child.dateOfBirth)}</p>
+            )}
+            <div className="flex items-center gap-1.5">
+              <ConsentIcon consent={child.imageConsent} />
+              {child.hasPhotos && <Camera size={18} className="text-sky-500" />}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          {child.dateOfBirth && (
-            <p className="text-[13px] text-gray-500 whitespace-nowrap">{calculateAge(child.dateOfBirth)}</p>
-          )}
-          {child.hasPhotos && <Camera size={18} className="text-sky-500" />}
+
+        <div className="flex items-center justify-between gap-2 border-t border-surface-container-highest mt-2.5 pt-2.5">
+          <span className="text-[13px] text-gray-500">{formatSessionValue(child.perSessionValue)} / sessão</span>
+          <span
+            className={`text-[12px] px-2.5 py-0.5 rounded-full whitespace-nowrap ${
+              child.isPack ? 'bg-[#EBF0ED] text-[#085041]' : 'bg-surface-container text-gray-500'
+            }`}
+          >
+            {child.isPack ? 'Pack mensal' : 'Avulso'}
+          </span>
         </div>
       </div>
 
