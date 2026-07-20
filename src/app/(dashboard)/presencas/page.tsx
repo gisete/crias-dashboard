@@ -294,7 +294,7 @@ export default function PresencasPage() {
               <Camera size={17} />
               Só fotos
               <span
-                className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                className={`text-[14px] px-1.5 py-0.5 rounded-full ${
                   photosOnly ? 'bg-white/20 text-white' : 'bg-surface-container text-gray-500'
                 }`}
               >

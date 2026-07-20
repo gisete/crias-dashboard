@@ -1,6 +1,6 @@
 export const SLOT_PILL = {
-  'manhã': 'bg-amber-100 text-amber-700',
-  'tarde': 'bg-indigo-50 text-indigo-600',
+  'manhã': 'bg-amber-200 text-amber-800',
+  'tarde': 'bg-indigo-100 text-indigo-700',
 } as const;
 
 export const SLOT_LABEL = {
