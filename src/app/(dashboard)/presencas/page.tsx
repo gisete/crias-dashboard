@@ -243,7 +243,7 @@ export default function PresencasPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 md:gap-4 mb-4 md:mb-8">
+      <div className="flex items-center justify-between gap-3 md:gap-4 mb-5 md:mb-8">
         <h1 className="text-headline-md md:text-headline-lg text-gray-900">Presenças</h1>
         <MonthSelector
           month={month}
@@ -282,7 +282,7 @@ export default function PresencasPage() {
             ))}
           </div>
 
-          <div className="mt-3 mb-8">
+          <div className="mt-3">
             <button
               onClick={() => setPhotosOnly((v) => !v)}
               className={`min-h-10 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors touch-manipulation select-none ${
@@ -304,11 +304,11 @@ export default function PresencasPage() {
           </div>
 
           {sessions.length === 0 ? (
-            <div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest p-16 text-center">
+            <div className="mt-6 bg-surface-container-lowest rounded-xl border border-surface-container-highest p-16 text-center">
               <p className="text-body-lg text-gray-500">Nenhuma sessão neste dia.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-10">
+            <div className="mt-6 flex flex-col gap-10">
               {sessions.map((session) => {
                 const presentCount = session.children.filter((c) => c.present === true).length;
                 const visibleChildren = photosOnly
