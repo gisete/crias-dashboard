@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createSessionEntries, removeSessionEntries } from '@/lib/data/sessions-sync';
+import { sendStatusWebhook } from '@/lib/make-webhook';
 import { ALL_STATUSES } from '@/lib/status-utils';
 import type { RegistrationStatus } from '@/types/database';
 
@@ -25,7 +26,7 @@ export async function PATCH(
 
   const { data: current, error: fetchError } = await supabase
     .from('registrations')
-    .select('status')
+    .select('status, webhook_error')
     .eq('id', id)
     .maybeSingle();
 
@@ -62,6 +63,29 @@ export async function PATCH(
       { error: 'Estado atualizado, mas a sincronização de sessões falhou.' },
       { status: 500 },
     );
+  }
+
+  if (status !== 'pendente') {
+    try {
+      await sendStatusWebhook(id, status);
+
+      if (current.webhook_error) {
+        await supabase
+          .from('registrations')
+          .update({ webhook_error: false, webhook_error_message: null })
+          .eq('id', id);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error(`Webhook failed for registration ${id}:`, error);
+      await supabase
+        .from('registrations')
+        .update({
+          webhook_error: true,
+          webhook_error_message: `Erro ao enviar notificação: ${message}`,
+        })
+        .eq('id', id);
+    }
   }
 
   return NextResponse.json({ success: true });
