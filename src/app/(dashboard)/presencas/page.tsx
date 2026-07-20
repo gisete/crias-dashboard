@@ -18,6 +18,7 @@ import {
   type AttendanceSession,
   type AttendanceChild,
 } from '@/lib/data/attendance';
+import { Camera } from '@phosphor-icons/react';
 import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
 import { getTodayLisbon } from '@/lib/date-utils';
 
@@ -136,6 +137,7 @@ export default function PresencasPage() {
   const [datesLoaded, setDatesLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
+  const [photosOnly, setPhotosOnly] = useState(false);
   const chipsRef = useRef<HTMLDivElement>(null);
 
   // Keep the selected date chip visible in the horizontal strip — on mobile
@@ -146,6 +148,10 @@ export default function PresencasPage() {
       .querySelector<HTMLElement>(`[data-date="${CSS.escape(selectedDate)}"]`)
       ?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }, [selectedDate, sessionDates]);
+
+  useEffect(() => {
+    setPhotosOnly(false);
+  }, [selectedDate]);
 
   useEffect(() => {
     async function loadDefaultMonth() {
@@ -228,6 +234,11 @@ export default function PresencasPage() {
     }
   }
 
+  const totalPhotoCount = useMemo(
+    () => sessions.reduce((sum, s) => sum + s.children.filter((c) => c.hasPhotos).length, 0),
+    [sessions],
+  );
+
   if (!month || year === null) return null;
 
   return (
@@ -251,24 +262,44 @@ export default function PresencasPage() {
         </div>
       ) : (
         <>
-          <div
-            ref={chipsRef}
-            className="flex gap-2 overflow-x-auto mb-8 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none"
-          >
-            {sessionDates.map((d) => (
-              <button
-                key={d.date}
-                data-date={d.date}
-                onClick={() => setSelectedDate(d.date)}
-                className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
-                  selectedDate === d.date
-                    ? 'bg-on-primary-fixed text-white'
-                    : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
+          <div className="flex flex-wrap items-center gap-3 mb-8">
+            <div
+              ref={chipsRef}
+              className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none flex-1 min-w-0"
+            >
+              {sessionDates.map((d) => (
+                <button
+                  key={d.date}
+                  data-date={d.date}
+                  onClick={() => setSelectedDate(d.date)}
+                  className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
+                    selectedDate === d.date
+                      ? 'bg-on-primary-fixed text-white'
+                      : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
+                  }`}
+                >
+                  {d.date} {d.dayOfWeek}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setPhotosOnly((v) => !v)}
+              className={`shrink-0 min-h-11 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
+                photosOnly
+                  ? 'bg-on-primary-fixed text-white'
+                  : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
+              }`}
+            >
+              <Camera size={16} />
+              Só fotos
+              <span
+                className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                  photosOnly ? 'bg-white/20 text-white' : 'bg-surface-container text-gray-500'
                 }`}
               >
-                {d.date} {d.dayOfWeek}
-              </button>
-            ))}
+                {totalPhotoCount}
+              </span>
+            </button>
           </div>
 
           {sessions.length === 0 ? (
@@ -279,6 +310,9 @@ export default function PresencasPage() {
             <div className="flex flex-col gap-10">
               {sessions.map((session) => {
                 const presentCount = session.children.filter((c) => c.present === true).length;
+                const visibleChildren = photosOnly
+                  ? session.children.filter((c) => c.hasPhotos)
+                  : session.children;
                 return (
                   <div key={session.sessionId}>
                     <div className="flex items-center gap-4 mb-4">
@@ -289,7 +323,11 @@ export default function PresencasPage() {
                         {presentCount}/{session.children.length} presentes
                       </span>
                     </div>
-                    <SlotGrid sessionChildren={session.children} onMark={handleMark} />
+                    {photosOnly && visibleChildren.length === 0 ? (
+                      <p className="text-body-md text-gray-400">Nenhuma criança com registos fotográficos</p>
+                    ) : (
+                      <SlotGrid sessionChildren={visibleChildren} onMark={handleMark} />
+                    )}
                   </div>
                 );
               })}
