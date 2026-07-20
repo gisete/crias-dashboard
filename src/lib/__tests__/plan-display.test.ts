@@ -1,4 +1,4 @@
-import { shortenPlan, getInitials } from '../plan-display';
+import { shortenPlan, getInitials, formatSessionValue } from '../plan-display';
 
 describe('shortenPlan', () => {
   it('returns "1 sessão" for a single session plan', () => {
@@ -29,5 +29,19 @@ describe('getInitials', () => {
 
   it('handles extra whitespace', () => {
     expect(getInitials('  Maria  João  ')).toBe('MJ');
+  });
+});
+
+describe('formatSessionValue', () => {
+  it('formats an integer value without decimals', () => {
+    expect(formatSessionValue(12)).toBe('12€');
+  });
+
+  it('formats a non-integer value with 2 decimals', () => {
+    expect(formatSessionValue(6.5)).toBe('6.50€');
+  });
+
+  it('formats zero as 0€', () => {
+    expect(formatSessionValue(0)).toBe('0€');
   });
 });

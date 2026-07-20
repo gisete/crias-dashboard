@@ -1,16 +1,13 @@
 import { Check } from '@phosphor-icons/react';
 import type { SessionChild } from '@/types/sessions';
 import { calculateAge } from '@/lib/age-calculator';
+import { formatSessionValue } from '@/lib/plan-display';
 import { ConsentIcon } from './ConsentIcon';
 
 const TH = 'py-5 px-6 text-label-sm text-gray-500 uppercase tracking-wider font-medium';
 const TH_CENTER = `${TH} text-center`;
 const TH_FOTO = `${TH} bg-[#EBF0ED] text-center`;
 const TD_FOTO = 'py-4 px-6 bg-[#F8FDFA]';
-
-function formatValue(v: number): string {
-  return Number.isInteger(v) ? `${v}€` : `${v.toFixed(2)}€`;
-}
 
 export function SessionTable({ children }: { children: SessionChild[] }) {
   const sorted = [...children].sort((a, b) =>
@@ -57,7 +54,7 @@ export function SessionTable({ children }: { children: SessionChild[] }) {
                   )}
                 </div>
               </td>
-              <td className="py-4 px-6 font-medium">{formatValue(child.perSessionValue)}</td>
+              <td className="py-4 px-6 font-medium">{formatSessionValue(child.perSessionValue)}</td>
             </tr>
           ))}
         </tbody>

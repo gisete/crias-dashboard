@@ -24,6 +24,10 @@ export function getInitials(name: string): string {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
+export function formatSessionValue(v: number): string {
+  return Number.isInteger(v) ? `${v}€` : `${v.toFixed(2)}€`;
+}
+
 export function getPlanOptions(): string[] {
   return [
     '1 sessão (14€)',
