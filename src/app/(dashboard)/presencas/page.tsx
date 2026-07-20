@@ -18,9 +18,11 @@ import {
   type AttendanceSession,
   type AttendanceChild,
 } from '@/lib/data/attendance';
-import { Camera, CaretDown, CaretUp } from '@phosphor-icons/react';
+import { Camera, CalendarBlank, CaretDown, CaretLeft, CaretRight, CaretUp } from '@phosphor-icons/react';
 import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
 import { getTodayLisbon } from '@/lib/date-utils';
+
+const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 // Unmarked children first, marked (present or absent) children last, each
 // group keeping the original fetch order — so marking a child slides it
@@ -128,6 +130,18 @@ function pickDefaultDate(dates: SessionDate[], month: string, year: number): str
   return dates[dates.length - 1].date;
 }
 
+function formatDateLabel(date: SessionDate, month: string, year: number): string {
+  const day = parseInt(date.date, 10);
+  const monthNum = MONTH_TO_NUMBER[month] ?? 1;
+  const monthAbbr = MONTH_ABBR[monthNum - 1];
+
+  const [todayYear, todayMonth, todayDay] = getTodayLisbon().split('-').map(Number);
+  const isToday = day === todayDay && monthNum === todayMonth && year === todayYear;
+
+  if (isToday) return `Hoje, ${day} ${monthAbbr}`;
+  return `${date.dayOfWeek}, ${day} ${monthAbbr}`;
+}
+
 // Same today-detection approach as pickDefaultDate's "exact" check, applied
 // to an already-selected date instead of picking one.
 function isTodaySelected(selectedDate: string, month: string, year: number): boolean {
@@ -178,16 +192,6 @@ export default function PresencasPage() {
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [photosOnly, setPhotosOnly] = useState(false);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
-  const chipsRef = useRef<HTMLDivElement>(null);
-
-  // Keep the selected date chip visible in the horizontal strip — on mobile
-  // the default date (e.g. today, late in the month) is often off-screen.
-  useEffect(() => {
-    if (!selectedDate || !chipsRef.current) return;
-    chipsRef.current
-      .querySelector<HTMLElement>(`[data-date="${CSS.escape(selectedDate)}"]`)
-      ?.scrollIntoView({ inline: 'center', block: 'nearest' });
-  }, [selectedDate, sessionDates]);
 
   useEffect(() => {
     setPhotosOnly(false);
@@ -316,25 +320,42 @@ export default function PresencasPage() {
         </div>
       ) : (
         <>
-          <div
-            ref={chipsRef}
-            className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none"
-          >
-            {sessionDates.map((d) => (
-              <button
-                key={d.date}
-                data-date={d.date}
-                onClick={() => setSelectedDate(d.date)}
-                className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
-                  selectedDate === d.date
-                    ? 'bg-on-primary-fixed text-white'
-                    : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
-                }`}
-              >
-                {d.date} {d.dayOfWeek}
-              </button>
-            ))}
-          </div>
+          {sessionDates.length > 0 && selectedDate && (() => {
+            const selectedIndex = sessionDates.findIndex((d) => d.date === selectedDate);
+            const currentDateObj = sessionDates[selectedIndex];
+            if (!currentDateObj) return null;
+
+            return (
+              <div className="flex items-center justify-between bg-white border border-surface-container-highest rounded-xl px-1.5 py-1.5">
+                <button
+                  onClick={() => {
+                    if (selectedIndex > 0) setSelectedDate(sessionDates[selectedIndex - 1].date);
+                  }}
+                  disabled={selectedIndex <= 0}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+                  aria-label="Data anterior"
+                >
+                  <CaretLeft size={16} weight="bold" />
+                </button>
+                <div className="flex items-center gap-2">
+                  <CalendarBlank size={18} className="text-gray-400" />
+                  <span className="text-body-md font-medium text-gray-900">
+                    {formatDateLabel(currentDateObj, month!, year!)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    if (selectedIndex < sessionDates.length - 1) setSelectedDate(sessionDates[selectedIndex + 1].date);
+                  }}
+                  disabled={selectedIndex >= sessionDates.length - 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+                  aria-label="Próxima data"
+                >
+                  <CaretRight size={16} weight="bold" />
+                </button>
+              </div>
+            );
+          })()}
 
           <div className="mt-3">
             <button

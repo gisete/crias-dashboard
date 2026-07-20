@@ -48,7 +48,11 @@ export const AttendanceCard = forwardRef<HTMLDivElement, Props>(function Attenda
             )}
             <div className="flex items-center gap-1.5">
               <ConsentIcon consent={child.imageConsent} />
-              {child.hasPhotos && <Camera size={18} className="text-sky-500" />}
+              {child.hasPhotos && (
+                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Camera size={14} weight="bold" className="text-blue-600" />
+                </div>
+              )}
             </div>
           </div>
         </div>
