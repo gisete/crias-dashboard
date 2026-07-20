@@ -150,8 +150,10 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   }
 
   async function handleResend() {
-    await updateRegistration(reg.id, { webhook_error: false, webhook_error_message: null });
-    onUpdate(reg.id, { webhook_error: false, webhook_error_message: null });
+    const result = await updateRegistrationStatus(reg.id, reg.status);
+    if (result.success) {
+      onUpdate(reg.id, { webhook_error: false, webhook_error_message: null });
+    }
   }
 
   const childNamesStr = formatChildNames(children);
