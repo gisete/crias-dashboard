@@ -18,7 +18,7 @@ import {
   type AttendanceSession,
   type AttendanceChild,
 } from '@/lib/data/attendance';
-import { Camera } from '@phosphor-icons/react';
+import { Camera, CaretDown, CaretUp } from '@phosphor-icons/react';
 import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
 import { getTodayLisbon } from '@/lib/date-utils';
 
@@ -128,6 +128,45 @@ function pickDefaultDate(dates: SessionDate[], month: string, year: number): str
   return dates[dates.length - 1].date;
 }
 
+// Same today-detection approach as pickDefaultDate's "exact" check, applied
+// to an already-selected date instead of picking one.
+function isTodaySelected(selectedDate: string, month: string, year: number): boolean {
+  const [todayYear, todayMonth, todayDay] = getTodayLisbon().split('-').map(Number);
+  return (
+    MONTH_TO_NUMBER[month] === todayMonth &&
+    year === todayYear &&
+    parseInt(selectedDate, 10) === todayDay
+  );
+}
+
+// Current hour in Lisbon (0-23), consistent with getTodayLisbon's use of
+// Intl.DateTimeFormat + formatToParts for timezone-safe reads.
+function getCurrentHourLisbon(): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Lisbon',
+    hour: 'numeric',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  return parseInt(parts.find((p) => p.type === 'hour')!.value, 10);
+}
+
+// All sections start expanded, except: on today, from 13:00 onward, morning
+// (manhã) sections default to collapsed since they're already over.
+function computeDefaultExpandedSlots(
+  sessions: AttendanceSession[],
+  selectedDate: string | null,
+  month: string,
+  year: number,
+): Set<string> {
+  const allIds = sessions.map((s) => s.sessionId);
+
+  if (!selectedDate || !isTodaySelected(selectedDate, month, year) || getCurrentHourLisbon() < 13) {
+    return new Set(allIds);
+  }
+
+  return new Set(sessions.filter((s) => s.slot !== 'manhã').map((s) => s.sessionId));
+}
+
 export default function PresencasPage() {
   const [month, setMonth] = useState<string | null>(null);
   const [year, setYear] = useState<number | null>(null);
@@ -138,6 +177,7 @@ export default function PresencasPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [photosOnly, setPhotosOnly] = useState(false);
+  const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
   const chipsRef = useRef<HTMLDivElement>(null);
 
   // Keep the selected date chip visible in the horizontal strip — on mobile
@@ -203,10 +243,12 @@ export default function PresencasPage() {
   const loadAttendance = useCallback(async () => {
     if (!month || year === null || !selectedDate) {
       setSessions([]);
+      setExpandedSlots(new Set());
       return;
     }
     const result = await fetchAttendanceByDate(selectedDate, month, year);
     setSessions(result);
+    setExpandedSlots(computeDefaultExpandedSlots(result, selectedDate, month, year));
   }, [month, year, selectedDate]);
 
   useEffect(() => {
@@ -216,6 +258,18 @@ export default function PresencasPage() {
   function handleMonthChange(m: string, y: number) {
     setMonth(m);
     setYear(y);
+  }
+
+  function toggleSlot(sessionId: string) {
+    setExpandedSlots((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) {
+        next.delete(sessionId);
+      } else {
+        next.add(sessionId);
+      }
+      return next;
+    });
   }
 
   async function handleMark(sessionChildId: string, present: boolean | null) {
@@ -314,21 +368,31 @@ export default function PresencasPage() {
                 const visibleChildren = photosOnly
                   ? session.children.filter((c) => c.hasPhotos)
                   : session.children;
+                const isExpanded = expandedSlots.has(session.sessionId);
                 return (
                   <div key={session.sessionId}>
-                    <div className="flex items-center gap-4 mb-4">
+                    <button
+                      onClick={() => toggleSlot(session.sessionId)}
+                      className="flex items-center gap-4 mb-4 w-full text-left cursor-pointer"
+                    >
                       <span className={`px-3 py-1 rounded-full text-label-md ${SLOT_PILL[session.slot]}`}>
                         {SLOT_LABEL[session.slot]}
                       </span>
                       <span className="text-body-md text-gray-500">
                         {presentCount}/{session.children.length} presentes
                       </span>
-                    </div>
-                    {photosOnly && visibleChildren.length === 0 ? (
-                      <p className="text-body-md text-gray-400">Nenhuma criança com registos fotográficos</p>
-                    ) : (
-                      <SlotGrid sessionChildren={visibleChildren} onMark={handleMark} />
-                    )}
+                      {isExpanded ? (
+                        <CaretUp size={14} className="text-gray-400 ml-auto" />
+                      ) : (
+                        <CaretDown size={14} className="text-gray-400 ml-auto" />
+                      )}
+                    </button>
+                    {isExpanded &&
+                      (photosOnly && visibleChildren.length === 0 ? (
+                        <p className="text-body-md text-gray-400">Nenhuma criança com registos fotográficos</p>
+                      ) : (
+                        <SlotGrid sessionChildren={visibleChildren} onMark={handleMark} />
+                      ))}
                   </div>
                 );
               })}
