@@ -1,5 +1,6 @@
 import { supabaseClient } from '@/lib/supabase/client';
 import { MONTH_TO_NUMBER } from '@/lib/months';
+import { mapConsent, type ConsentType } from '@/lib/consent-utils';
 
 const WEEKDAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -15,6 +16,9 @@ export interface AttendanceChild {
   parentName: string;
   present: boolean | null;
   hasPhotos: boolean;
+  imageConsent: ConsentType;
+  perSessionValue: number;
+  isPack: boolean;
 }
 
 export interface AttendanceSession {
@@ -81,7 +85,7 @@ export async function fetchAttendanceByDate(
   const { data: childrenData, error: childrenError } = await supabaseClient
     .from('session_children')
     .select(
-      'id, session_id, present, child:children(name, date_of_birth), registration:registrations(has_photos, family:families(parent_name))',
+      'id, session_id, present, child:children(name, date_of_birth), registration:registrations(has_photos, plan, total_price, num_sessions, image_consent, family:families(parent_name))',
     )
     .in('session_id', sessionIds);
 
@@ -94,7 +98,14 @@ export async function fetchAttendanceByDate(
     session_id: string;
     present: boolean | null;
     child: { name: string; date_of_birth: string | null } | null;
-    registration: { has_photos: boolean; family: { parent_name: string } | null } | null;
+    registration: {
+      has_photos: boolean;
+      plan: string;
+      total_price: number;
+      num_sessions: number;
+      image_consent: string | null;
+      family: { parent_name: string } | null;
+    } | null;
   }
 
   const rows = (childrenData ?? []) as unknown as Row[];
@@ -104,6 +115,10 @@ export async function fetchAttendanceByDate(
   for (const row of rows) {
     if (!row.child) continue;
 
+    const numSessions = row.registration?.num_sessions ?? 0;
+    const perSessionValue =
+      numSessions > 0 && row.registration ? row.registration.total_price / numSessions : 0;
+
     const child: AttendanceChild = {
       sessionChildId: row.id,
       childName: row.child.name,
@@ -111,6 +126,9 @@ export async function fetchAttendanceByDate(
       parentName: row.registration?.family?.parent_name ?? '',
       present: row.present,
       hasPhotos: row.registration?.has_photos ?? false,
+      imageConsent: mapConsent(row.registration?.image_consent),
+      perSessionValue,
+      isPack: numSessions > 1,
     };
 
     if (!childrenBySession.has(row.session_id)) {
