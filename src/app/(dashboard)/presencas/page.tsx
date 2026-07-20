@@ -262,35 +262,36 @@ export default function PresencasPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <div
-              ref={chipsRef}
-              className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none flex-1 min-w-0"
-            >
-              {sessionDates.map((d) => (
-                <button
-                  key={d.date}
-                  data-date={d.date}
-                  onClick={() => setSelectedDate(d.date)}
-                  className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
-                    selectedDate === d.date
-                      ? 'bg-on-primary-fixed text-white'
-                      : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
-                  }`}
-                >
-                  {d.date} {d.dayOfWeek}
-                </button>
-              ))}
-            </div>
+          <div
+            ref={chipsRef}
+            className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none"
+          >
+            {sessionDates.map((d) => (
+              <button
+                key={d.date}
+                data-date={d.date}
+                onClick={() => setSelectedDate(d.date)}
+                className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
+                  selectedDate === d.date
+                    ? 'bg-on-primary-fixed text-white'
+                    : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
+                }`}
+              >
+                {d.date} {d.dayOfWeek}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 mb-8">
             <button
               onClick={() => setPhotosOnly((v) => !v)}
-              className={`shrink-0 min-h-11 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-label-md whitespace-nowrap transition-colors touch-manipulation select-none ${
+              className={`min-h-10 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors touch-manipulation select-none ${
                 photosOnly
                   ? 'bg-on-primary-fixed text-white'
-                  : 'bg-surface-container-lowest border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
+                  : 'bg-white border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
               }`}
             >
-              <Camera size={16} />
+              <Camera size={17} />
               Só fotos
               <span
                 className={`text-[11px] px-1.5 py-0.5 rounded-full ${
