@@ -394,18 +394,18 @@ export default function PresencasPage() {
                   <div key={session.sessionId}>
                     <button
                       onClick={() => toggleSlot(session.sessionId)}
-                      className="flex items-center gap-4 mb-4 w-full text-left cursor-pointer"
+                      className="group flex items-center gap-3 w-full text-left cursor-pointer mb-4 bg-surface-container-low border border-surface-container-highest rounded-lg px-4 py-2.5 hover:border-gray-300 hover:bg-surface-container transition-colors"
                     >
                       <span className={`px-3 py-1 rounded-full text-label-md ${SLOT_PILL[session.slot]}`}>
                         {SLOT_LABEL[session.slot]}
                       </span>
-                      <span className="text-body-md text-gray-500">
+                      <span className="text-body-md text-gray-600">
                         {presentCount}/{session.children.length} presentes
                       </span>
                       {isExpanded ? (
-                        <CaretUp size={14} className="text-gray-400 ml-auto" />
+                        <CaretUp size={16} className="text-gray-400 group-hover:text-gray-600 ml-auto" />
                       ) : (
-                        <CaretDown size={14} className="text-gray-400 ml-auto" />
+                        <CaretDown size={16} className="text-gray-400 group-hover:text-gray-600 ml-auto" />
                       )}
                     </button>
                     {isExpanded &&

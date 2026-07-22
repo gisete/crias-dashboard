@@ -370,7 +370,12 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               <DeleteRegistrationButton registrationId={reg.id} childNames={childNamesStr} />
               <div className="flex items-center gap-4">
                 <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
-                <StatusActions status={reg.status} onAction={handleStatusChange} />
+                <StatusActions
+                  status={reg.status}
+                  onAction={handleStatusChange}
+                  hasVoucher={!!reg.voucher_code}
+                  childrenCount={children.length}
+                />
               </div>
             </div>
           </div>

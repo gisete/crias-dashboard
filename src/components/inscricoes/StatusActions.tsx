@@ -4,21 +4,33 @@ import type { RegistrationStatus } from '@/types/database';
 interface Props {
   status: RegistrationStatus;
   onAction: (newStatus: RegistrationStatus) => Promise<void>;
+  hasVoucher: boolean;
+  childrenCount: number;
 }
 
-export function StatusActions({ status, onAction }: Props) {
+export function StatusActions({ status, onAction, hasVoucher, childrenCount }: Props) {
   if (status === 'pago_confirmado' || status === 'cancelado') return null;
 
   return (
     <div className="flex flex-row flex-wrap gap-3">
       {status === 'pendente' && (
-        <button
-          onClick={() => onAction('a_pagar')}
-          className="w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm"
-        >
-          <CheckCircle size={16} weight="fill" />
-          Confirmar Dados
-        </button>
+        hasVoucher && childrenCount === 1 ? (
+          <button
+            onClick={() => onAction('pago_confirmado')}
+            className="w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm"
+          >
+            <CheckCircle size={16} weight="fill" />
+            Confirmar Inscrição
+          </button>
+        ) : (
+          <button
+            onClick={() => onAction('a_pagar')}
+            className="w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm"
+          >
+            <CheckCircle size={16} weight="fill" />
+            Confirmar Dados
+          </button>
+        )
       )}
 
       {(status === 'a_pagar' || status === 'lembrete') && (
