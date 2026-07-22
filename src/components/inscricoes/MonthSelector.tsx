@@ -140,25 +140,25 @@ export function MonthSelector({
   return (
     <div ref={containerRef} className="relative">
       {/* ── Pill ── */}
-      <div className="flex items-center justify-between gap-1 bg-surface-container-lowest border border-surface-container-highest rounded-full p-1.5 md:p-2 shadow-sm">
+      <div className="flex items-center justify-between gap-1 bg-on-primary-fixed border border-white/10 rounded-full p-1.5 md:p-2">
         <button
           onClick={prev}
           disabled={!prevTarget}
-          className="text-gray-500 hover:text-gray-900 transition-colors w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
+          className="text-white/50 hover:text-white transition-colors w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Mês anterior"
         >
           <CaretLeft size={14} weight="bold" />
         </button>
         <button
           onClick={() => setIsOpen((o) => !o)}
-          className="flex-1 text-[14px] md:text-body-md font-medium px-2 text-gray-900 md:min-w-[120px] text-center hover:text-primary transition-colors whitespace-nowrap"
+          className="flex-1 text-[14px] md:text-body-md font-medium px-2 text-white md:min-w-[120px] text-center hover:text-white/80 transition-colors whitespace-nowrap"
         >
           {label}
         </button>
         <button
           onClick={next}
           disabled={!nextTarget}
-          className="text-gray-500 hover:text-gray-900 transition-colors w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
+          className="text-white/50 hover:text-white transition-colors w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Próximo mês"
         >
           <CaretRight size={14} weight="bold" />
@@ -203,7 +203,7 @@ export function MonthSelector({
                     onClick={() => selectMonth(mIdx)}
                     className={`py-2 px-1 rounded-lg text-label-md text-center transition-colors ${
                       isSelected
-                        ? 'bg-primary text-white font-semibold'
+                        ? 'bg-on-primary-fixed text-white font-semibold'
                         : 'text-gray-700 hover:bg-surface-container'
                     }`}
                   >

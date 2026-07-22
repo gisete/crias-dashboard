@@ -38,15 +38,15 @@ export function RegistrationsTable({
   onStatusChange,
 }: Props) {
   const [sortDir, setSortDir] = useState<SortDir>('default');
-  const [orderDir, setOrderDir] = useState<OrderDir>('asc');
+  const [orderDir, setOrderDir] = useState<OrderDir>('desc');
   const [activeSort, setActiveSort] = useState<ActiveSort>('order');
 
   const orderMap = useMemo(() => {
-    const byCreatedAt = [...registrations].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
+    const submittedTime = (reg: RegistrationWithDetails) =>
+      new Date(reg.submitted_at ?? reg.created_at).getTime();
+    const bySubmittedAt = [...registrations].sort((a, b) => submittedTime(a) - submittedTime(b));
     const map = new Map<string, number>();
-    byCreatedAt.forEach((reg, i) => map.set(reg.id, i + 1));
+    bySubmittedAt.forEach((reg, i) => map.set(reg.id, i + 1));
     return map;
   }, [registrations]);
 

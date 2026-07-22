@@ -18,7 +18,7 @@ import {
   type AttendanceSession,
   type AttendanceChild,
 } from '@/lib/data/attendance';
-import { Camera, CalendarBlank, CaretDown, CaretLeft, CaretRight, CaretUp } from '@phosphor-icons/react';
+import { CalendarBlank, CaretDown, CaretLeft, CaretRight, CaretUp } from '@phosphor-icons/react';
 import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
 import { getTodayLisbon } from '@/lib/date-utils';
 
@@ -357,33 +357,35 @@ export default function PresencasPage() {
             );
           })()}
 
-          <div className="mt-3">
+          <div className="mt-5 flex justify-end">
             <button
               onClick={() => setPhotosOnly((v) => !v)}
-              className={`min-h-10 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors touch-manipulation select-none ${
-                photosOnly
-                  ? 'bg-on-primary-fixed text-white'
-                  : 'bg-white border border-surface-container-highest text-gray-600 hover:bg-surface-container-low active:bg-surface-container'
-              }`}
+              className="inline-flex items-center gap-2.5 touch-manipulation select-none"
+              role="switch"
+              aria-checked={photosOnly}
             >
-              <Camera size={17} />
-              Só fotos
-              <span
-                className={`text-[14px] px-1.5 py-0.5 rounded-full ${
-                  photosOnly ? 'bg-white/20 text-white' : 'bg-surface-container text-gray-500'
+              <div
+                className={`relative w-10 h-[22px] rounded-full transition-colors ${
+                  photosOnly ? 'bg-on-primary-fixed' : 'bg-gray-300'
                 }`}
               >
-                {totalPhotoCount}
-              </span>
+                <div
+                  className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-[left] ${
+                    photosOnly ? 'left-5' : 'left-[2px]'
+                  }`}
+                />
+              </div>
+              <span className="text-body-md font-medium text-gray-900">Só fotos</span>
+              <span className="text-body-md text-gray-500">({totalPhotoCount})</span>
             </button>
           </div>
 
           {sessions.length === 0 ? (
-            <div className="mt-6 bg-surface-container-lowest rounded-xl border border-surface-container-highest p-16 text-center">
+            <div className="mt-3 bg-surface-container-lowest rounded-xl border border-surface-container-highest p-16 text-center">
               <p className="text-body-lg text-gray-500">Nenhuma sessão neste dia.</p>
             </div>
           ) : (
-            <div className="mt-6 flex flex-col gap-10">
+            <div className="mt-3 flex flex-col gap-4">
               {sessions.map((session) => {
                 const presentCount = session.children.filter((c) => c.present === true).length;
                 const visibleChildren = photosOnly
@@ -394,7 +396,7 @@ export default function PresencasPage() {
                   <div key={session.sessionId}>
                     <button
                       onClick={() => toggleSlot(session.sessionId)}
-                      className="group flex items-center gap-3 w-full text-left cursor-pointer mb-4 bg-surface-container-low border border-surface-container-highest rounded-lg px-4 py-2.5 hover:border-gray-300 hover:bg-surface-container transition-colors"
+                      className={`group flex items-center gap-3 w-full text-left cursor-pointer bg-surface-container-low border border-surface-container-highest rounded-lg px-4 py-2.5 hover:border-gray-300 hover:bg-surface-container transition-colors ${isExpanded ? 'mb-4' : ''}`}
                     >
                       <span className={`px-3 py-1 rounded-full text-label-md ${SLOT_PILL[session.slot]}`}>
                         {SLOT_LABEL[session.slot]}

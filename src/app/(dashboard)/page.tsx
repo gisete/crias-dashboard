@@ -15,7 +15,6 @@ import {
 } from '@/lib/data/registrations';
 import { MONTH_NAMES } from '@/lib/months';
 import { MonthSelector } from '@/components/inscricoes/MonthSelector';
-import { AddMonthButton } from '@/components/inscricoes/AddMonthButton';
 import { StatCards } from '@/components/inscricoes/StatCards';
 import { StatusFilter } from '@/components/inscricoes/StatusFilter';
 import { RegistrationsTable } from '@/components/inscricoes/RegistrationsTable';
@@ -127,13 +126,6 @@ export default function InscricoesPage() {
             getAvailableMonths={
               availableYears.length > 0 ? (y) => monthsByYear[y] ?? [] : undefined
             }
-          />
-          <AddMonthButton
-            existingMonths={monthsByYear}
-            onCreated={(m, y) => {
-              refreshAvailableMonths();
-              handleMonthChange(m, y);
-            }}
           />
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 @theme {
   /* ── Fonts ── */
-  --font-body: "Nunito Sans", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   /* ── Colors ── */
   --color-primary: #0f5238;
@@ -100,7 +100,7 @@ html {
 }
 
 body {
-  font-family: "Nunito Sans", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: var(--color-background);
   color: var(--color-on-surface);
 }

@@ -40,7 +40,7 @@ export async function fetchRegistrations(
     .select('*, family:families(*), children(*)')
     .eq('month', month)
     .eq('year', year)
-    .order('created_at', { ascending: false });
+    .order('submitted_at', { ascending: false, nullsFirst: false });
 
   if (status && status !== 'todos') {
     query = query.eq('status', status);
