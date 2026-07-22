@@ -1,5 +1,17 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { MONTH_TO_NUMBER, MONTH_LABELS } from '@/lib/months';
 import type { RegistrationStatus } from '@/types/database';
+
+/**
+ * "julho" -> "Julho". Falls back to a plain capitalized first letter for
+ * unrecognized input instead of throwing, since this only feeds an email
+ * subject line.
+ */
+function capitalizeMonth(month: string): string {
+  const monthNumber = MONTH_TO_NUMBER[month.toLowerCase()];
+  if (monthNumber) return MONTH_LABELS[monthNumber - 1];
+  return month.charAt(0).toUpperCase() + month.slice(1);
+}
 
 export interface WebhookRegistration {
   id: string;
@@ -45,7 +57,9 @@ export interface StatusWebhookPayload {
   has_photos: boolean;
   datas_selecionadas: string;
   nif: string | null;
+  fatura: boolean;
   voucher_code: string | null;
+  has_voucher: boolean;
   notas: string | null;
 }
 
@@ -66,7 +80,7 @@ export function buildStatusWebhookPayload(
     responsavel_email: family.email,
     responsavel_telefone: family.phone,
     criancas_nomes: children.map((c) => c.name).join(', '),
-    mes: registration.month,
+    mes: capitalizeMonth(registration.month),
     year: registration.year,
     plano: registration.plan,
     unit_price: registration.unit_price,
@@ -76,7 +90,9 @@ export function buildStatusWebhookPayload(
     has_photos: registration.has_photos,
     datas_selecionadas: registration.selected_dates.join(', '),
     nif: registration.nif,
+    fatura: !!registration.nif,
     voucher_code: registration.voucher_code,
+    has_voucher: !!registration.voucher_code,
     notas: registration.notes,
   };
 }

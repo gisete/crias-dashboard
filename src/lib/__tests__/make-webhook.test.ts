@@ -38,7 +38,7 @@ describe('buildStatusWebhookPayload', () => {
       responsavel_email: 'maria@example.com',
       responsavel_telefone: '912345678',
       criancas_nomes: 'Ana, Bruno',
-      mes: 'julho',
+      mes: 'Julho',
       year: 2026,
       plano: '2 sessões + 6 registos fotográficos (40€)',
       unit_price: 40,
@@ -48,7 +48,9 @@ describe('buildStatusWebhookPayload', () => {
       has_photos: true,
       datas_selecionadas: '5 (manhã), 12 (tarde)',
       nif: '123456789',
+      fatura: true,
       voucher_code: 'VERAO10',
+      has_voucher: true,
       notas: 'Alergia a frutos secos',
     });
   });
@@ -64,7 +66,9 @@ describe('buildStatusWebhookPayload', () => {
     const result = buildStatusWebhookPayload(registration, baseFamily, twoChildren, 'a_pagar');
 
     expect(result.nif).toBeNull();
+    expect(result.fatura).toBe(false);
     expect(result.voucher_code).toBeNull();
+    expect(result.has_voucher).toBe(false);
     expect(result.notas).toBeNull();
   });
 
@@ -72,5 +76,27 @@ describe('buildStatusWebhookPayload', () => {
     const result = buildStatusWebhookPayload(baseRegistration, baseFamily, [], 'lembrete');
 
     expect(result.criancas_nomes).toBe('');
+  });
+
+  it('capitalizes the month name for the email subject', () => {
+    const result = buildStatusWebhookPayload(
+      { ...baseRegistration, month: 'março' },
+      baseFamily,
+      twoChildren,
+      'pago_confirmado',
+    );
+
+    expect(result.mes).toBe('Março');
+  });
+
+  it('falls back to a plain capitalized first letter for an unrecognized month', () => {
+    const result = buildStatusWebhookPayload(
+      { ...baseRegistration, month: 'unknown' },
+      baseFamily,
+      twoChildren,
+      'pago_confirmado',
+    );
+
+    expect(result.mes).toBe('Unknown');
   });
 });
