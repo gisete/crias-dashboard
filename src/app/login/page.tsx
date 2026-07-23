@@ -30,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm p-8 bg-white rounded-lg shadow-sm border border-gray-200">
         <h1 className="text-xl font-semibold mb-6 text-center">Crias na Floresta</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
