@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { List, X, Bell, UserCircle } from "@phosphor-icons/react";
 import { SidebarContent } from "@/components/layout/SidebarContent";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
@@ -24,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	return (
 		<div className="flex min-h-screen overflow-x-hidden">
+			<ToastProvider>
 			{/* Sidebar (desktop) */}
 			<aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-on-primary-fixed text-white py-10 px-6 z-50">
 				<SidebarContent onLogout={handleLogout} />
@@ -77,6 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 				<main className="flex-1 pt-6 pb-4 px-4 sm:p-8 max-w-7xl mx-auto w-full">{children}</main>
 			</div>
+			</ToastProvider>
 		</div>
 	);
 }

@@ -2,6 +2,34 @@ import { supabaseClient } from '@/lib/supabase/client';
 import type { RegistrationWithDetails, Child } from '@/types/database';
 import { getTodayLisbon } from '@/lib/date-utils';
 
+export async function fetchUnassignedRegistrations(): Promise<RegistrationWithDetails[]> {
+  const { data, error } = await supabaseClient
+    .from('registrations')
+    .select('*, family:families(*), children(*)')
+    .is('month_id', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('fetchUnassignedRegistrations error:', error);
+    return [];
+  }
+
+  return (data ?? []) as unknown as RegistrationWithDetails[];
+}
+
+export async function assignRegistrationMonth(
+  id: string,
+  month: string,
+  year: number
+): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/registrations/${id}/assign-month`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ month, year }),
+  });
+  return { success: res.ok };
+}
+
 export interface ResyncResult {
   success: boolean;
   error?: string;
@@ -256,12 +284,13 @@ export async function deleteRegistration(
 
 export async function updateRegistrationStatus(
   id: string,
-  newStatus: string
+  newStatus: string,
+  options?: { silent?: boolean }
 ): Promise<{ success: boolean }> {
   const res = await fetch(`/api/registrations/${id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: newStatus }),
+    body: JSON.stringify({ status: newStatus, silent: options?.silent ?? false }),
   });
   return { success: res.ok };
 }

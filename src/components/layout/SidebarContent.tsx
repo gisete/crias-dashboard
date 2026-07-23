@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardText, CalendarCheck, CalendarDots, UserCheck, SignOut, type Icon } from "@phosphor-icons/react";
-import { PendingCounter } from "./PendingCounter";
 
 interface NavItem {
 	href: string;
@@ -71,10 +70,6 @@ export function SidebarContent({ onNavigate, onLogout }: Props) {
 						</Link>
 					);
 				})}
-
-				<div className="mt-8 pt-8 border-t border-white/10">
-					<PendingCounter />
-				</div>
 			</nav>
 
 			<div className="mt-auto pt-8 border-t border-white/10">

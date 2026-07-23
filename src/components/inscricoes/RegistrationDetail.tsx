@@ -6,6 +6,7 @@ import { PencilSimple, Check, X } from '@phosphor-icons/react';
 import type { RegistrationWithDetails, RegistrationStatus, Child } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
+import { useToast } from '@/contexts/ToastContext';
 import {
   updateRegistration,
   updateRegistrationStatus,
@@ -27,6 +28,13 @@ interface Props {
 }
 
 const IMAGE_CONSENT_OPTIONS = ['Sim, autorizo', 'Autorizo, mas o rosto não é exposto', 'Não'];
+
+const STATUS_TOAST_MESSAGES: Partial<Record<RegistrationStatus, string>> = {
+  a_pagar: 'Dados de pagamento enviados',
+  pago_confirmado: 'Pagamento confirmado',
+  lembrete: 'Lembrete enviado',
+  cancelado: 'Inscrição cancelada',
+};
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-');
@@ -62,6 +70,7 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 
 export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange }: Props) {
   const { family, children } = reg;
+  const { showToast } = useToast();
   const [statusOpen, setStatusOpen] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const [editingDates, setEditingDates] = useState(false);
@@ -128,11 +137,25 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     onUpdate(reg.id, { selected_dates: dates });
   }
 
-  async function handleStatusChange(newStatus: RegistrationStatus) {
-    await updateRegistrationStatus(reg.id, newStatus);
+  async function applyStatus(newStatus: RegistrationStatus, options?: { silent?: boolean }) {
+    const result = await updateRegistrationStatus(reg.id, newStatus, options);
+    if (!result.success) {
+      showToast('Erro ao atualizar estado', 'error');
+      return;
+    }
     onStatusChange(reg.id, newStatus);
+    const message = STATUS_TOAST_MESSAGES[newStatus];
+    if (message) showToast(message);
   }
 
+  // Wired to StatusActions' quick-action buttons — the "official" flow, so it
+  // sends the Brevo notification as usual.
+  async function handleStatusChange(newStatus: RegistrationStatus) {
+    await applyStatus(newStatus);
+  }
+
+  // Manual "Estado" dropdown override — used for testing or to correct a
+  // mistake, so it must not re-trigger a customer email.
   function handleStatusSelect(newStatus: RegistrationStatus) {
     setStatusOpen(false);
     if (newStatus === reg.status) return;
@@ -140,12 +163,12 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
       setPendingStatus(newStatus);
       return;
     }
-    handleStatusChange(newStatus);
+    applyStatus(newStatus, { silent: true });
   }
 
   async function handleConfirmStatusChange() {
     if (!pendingStatus) return;
-    await handleStatusChange(pendingStatus);
+    await applyStatus(pendingStatus, { silent: true });
     setPendingStatus(null);
   }
 

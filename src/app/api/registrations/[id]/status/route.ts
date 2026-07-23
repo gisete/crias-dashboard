@@ -12,8 +12,11 @@ export async function PATCH(
   const { id } = await params;
 
   let status: RegistrationStatus;
+  let silent = false;
   try {
-    ({ status } = await request.json());
+    const body = await request.json();
+    status = body.status;
+    silent = body.silent === true;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -65,7 +68,7 @@ export async function PATCH(
     );
   }
 
-  if (status !== 'pendente') {
+  if (status !== 'pendente' && !silent) {
     try {
       await sendStatusWebhook(id, status);
 

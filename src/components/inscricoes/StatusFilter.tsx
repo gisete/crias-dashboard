@@ -2,44 +2,18 @@ import type { StatusCounts } from '@/lib/data/registrations';
 
 type FilterKey = 'todos' | 'pendente' | 'a_pagar' | 'lembrete' | 'pago_confirmado' | 'cancelado';
 
-const FILTERS: { key: FilterKey; label: string; activeClass: string; inactiveClass: string }[] = [
-  {
-    key: 'todos',
-    label: 'Todos',
-    activeClass: 'bg-on-surface text-white border-on-surface shadow-sm',
-    inactiveClass: 'bg-surface-container-lowest text-gray-600 border-surface-container-highest hover:bg-surface-container-low',
-  },
-  {
-    key: 'pendente',
-    label: 'Pendente',
-    activeClass: 'bg-error text-white border-error',
-    inactiveClass: 'bg-error-container/20 text-error border-error-container/40',
-  },
-  {
-    key: 'a_pagar',
-    label: 'A Pagar',
-    activeClass: 'bg-status-apagar-text text-white border-status-apagar-text',
-    inactiveClass: 'bg-status-apagar-bg text-status-apagar-text border-status-apagar-text/25',
-  },
-  {
-    key: 'lembrete',
-    label: 'Lembrete',
-    activeClass: 'bg-status-lembrete-text text-white border-status-lembrete-text',
-    inactiveClass: 'bg-status-lembrete-bg text-status-lembrete-text border-status-lembrete-text/25',
-  },
-  {
-    key: 'pago_confirmado',
-    label: 'Pago',
-    activeClass: 'bg-status-pago-text text-white border-status-pago-text',
-    inactiveClass: 'bg-status-pago-bg text-status-pago-text border-status-pago-text/25',
-  },
-  {
-    key: 'cancelado',
-    label: 'Cancelado',
-    activeClass: 'bg-gray-500 text-white border-gray-500',
-    inactiveClass: 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200',
-  },
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'pendente', label: 'Pendente' },
+  { key: 'a_pagar', label: 'A Pagar' },
+  { key: 'lembrete', label: 'Lembrete' },
+  { key: 'pago_confirmado', label: 'Pago' },
+  { key: 'cancelado', label: 'Cancelado' },
 ];
+
+const ACTIVE_CLASS = 'bg-on-surface text-white border-on-surface shadow-sm';
+const INACTIVE_CLASS =
+  'bg-surface-container text-gray-600 border-surface-container-highest hover:bg-surface-container-high';
 
 interface Props {
   active: FilterKey;
@@ -49,13 +23,13 @@ interface Props {
 
 export function StatusFilter({ active, counts, onChange }: Props) {
   return (
-    <div className="flex gap-2 sm:gap-4 mb-8 sm:mb-10 overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0 scrollbar-none">
-      {FILTERS.map(({ key, label, activeClass, inactiveClass }) => (
+    <div className="flex gap-1 sm:gap-1.5 mb-8 sm:mb-10 overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0 scrollbar-none">
+      {FILTERS.map(({ key, label }) => (
         <button
           key={key}
           onClick={() => onChange(key)}
           className={`shrink-0 px-4 sm:px-6 py-3 rounded-lg text-label-md border transition-colors whitespace-nowrap touch-manipulation select-none ${
-            active === key ? activeClass : inactiveClass
+            active === key ? ACTIVE_CLASS : INACTIVE_CLASS
           }`}
         >
           {label} ({counts[key]})
