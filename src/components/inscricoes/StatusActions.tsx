@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, Envelope, X, CircleNotch } from '@phosphor-icons/react';
+import { CheckCircle, Envelope, CircleNotch } from '@phosphor-icons/react';
 import type { RegistrationStatus } from '@/types/database';
 
 interface Props {
@@ -58,28 +58,20 @@ export function StatusActions({ status, onAction, hasVoucher, childrenCount }: P
       {(status === 'a_pagar' || status === 'lembrete') && (
         <>
           <button
+            onClick={() => handleClick('lembrete')}
+            disabled={!!loading}
+            className={`w-auto flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3.5 px-5 rounded-xl text-label-md hover:bg-gray-50 transition-colors ${disabledClass}`}
+          >
+            <ActionIcon forStatus="lembrete" icon={<Envelope size={16} weight="fill" />} />
+            Enviar Lembrete
+          </button>
+          <button
             onClick={() => handleClick('pago_confirmado')}
             disabled={!!loading}
             className={`w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm ${disabledClass}`}
           >
             <ActionIcon forStatus="pago_confirmado" icon={<CheckCircle size={16} weight="fill" />} />
             Confirmar Pagamento
-          </button>
-          <button
-            onClick={() => handleClick('lembrete')}
-            disabled={!!loading}
-            className={`w-auto flex items-center justify-center gap-2 bg-error text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-error/90 transition-colors shadow-sm ${disabledClass}`}
-          >
-            <ActionIcon forStatus="lembrete" icon={<Envelope size={16} weight="fill" />} />
-            Enviar Lembrete
-          </button>
-          <button
-            onClick={() => handleClick('cancelado')}
-            disabled={!!loading}
-            className={`w-auto flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3.5 px-5 rounded-xl text-label-md hover:bg-gray-300 transition-colors ${disabledClass}`}
-          >
-            <ActionIcon forStatus="cancelado" icon={<X size={16} weight="bold" />} />
-            Cancelar
           </button>
         </>
       )}

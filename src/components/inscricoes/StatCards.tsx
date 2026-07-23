@@ -1,7 +1,11 @@
 import type { MonthStats } from "@/lib/data/registrations";
 
 function formatRevenue(value: number): string {
-	return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "€";
+	return (
+		Math.round(value)
+			.toString()
+			.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "€"
+	);
 }
 
 export function StatCards({ stats }: { stats: MonthStats }) {

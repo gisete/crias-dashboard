@@ -144,7 +144,11 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
       return;
     }
     onStatusChange(reg.id, newStatus);
-    const message = STATUS_TOAST_MESSAGES[newStatus];
+    // Manual overrides don't send the customer email, so their toast shouldn't
+    // imply one went out — just confirm the status itself changed.
+    const message = options?.silent
+      ? `Estado alterado para ${STATUS_LABELS[newStatus]}`
+      : STATUS_TOAST_MESSAGES[newStatus];
     if (message) showToast(message);
   }
 
@@ -392,7 +396,9 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
             <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
               <DeleteRegistrationButton registrationId={reg.id} childNames={childNamesStr} />
               <div className="flex items-center gap-4">
-                <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
+                {reg.status !== 'a_pagar' && reg.status !== 'lembrete' && (
+                  <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
+                )}
                 <StatusActions
                   status={reg.status}
                   onAction={handleStatusChange}

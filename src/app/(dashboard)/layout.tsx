@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { List, X, Bell, UserCircle } from "@phosphor-icons/react";
+import { List, X } from "@phosphor-icons/react";
 import { SidebarContent } from "@/components/layout/SidebarContent";
 import { ToastProvider } from "@/contexts/ToastContext";
 
@@ -54,26 +54,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			{/* Main content */}
 			<div className="flex-1 min-w-0 md:ml-64 flex flex-col min-h-screen">
 				{/* Top bar */}
-				<header className="sticky top-0 z-40 bg-on-primary-fixed md:bg-surface-container-lowest/80 md:backdrop-blur-md border-b border-white/10 md:border-surface-container-highest flex justify-between items-center w-full px-4 sm:px-8 py-3 md:py-4">
+				<header className="md:hidden sticky top-0 z-40 bg-on-primary-fixed border-b border-white/10 flex items-center w-full px-4 sm:px-8 py-3">
 					<div className="flex items-center gap-3">
 						<button
 							onClick={() => setMobileNavOpen(true)}
 							aria-label="Abrir menu"
-							className="md:hidden -ml-2 text-white/70 hover:text-white transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+							className="-ml-2 text-white/70 hover:text-white transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
 						>
 							<List size={22} />
 						</button>
-						<Link href="/" className="md:hidden text-[17px] font-medium text-white">
+						<Link href="/" className="text-[17px] font-medium text-white">
 							Crias na Floresta - Gestão
 						</Link>
-					</div>
-					<div className="hidden md:flex items-center gap-2">
-						<button className="text-gray-500 hover:text-gray-900 transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container">
-							<Bell size={20} />
-						</button>
-						<button className="text-gray-500 hover:text-gray-900 transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container">
-							<UserCircle size={20} />
-						</button>
 					</div>
 				</header>
 
