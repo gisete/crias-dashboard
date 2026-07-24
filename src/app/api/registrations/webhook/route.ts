@@ -6,6 +6,8 @@ import { normalizeDateEntry } from '@/lib/date-utils';
 import type { WebhookPayload } from '@/types/webhook';
 import { MONTH_TO_NUMBER } from '@/lib/months';
 
+const WRAPPED_VALUE = /\{"value":"([^"]+)"\}/g;
+
 function normalizeStringArray(value: string[] | string | null | undefined): string[] {
   if (!value) return [];
   if (typeof value === 'string') {
@@ -104,7 +106,9 @@ export async function POST(request: NextRequest) {
 
   let body: WebhookPayload;
   try {
-    body = await request.json();
+    const raw = await request.text();
+    const cleaned = raw.replace(WRAPPED_VALUE, '$1');
+    body = JSON.parse(cleaned);
   } catch {
     return NextResponse.json({ status: 'error', message: 'Invalid JSON body' }, { status: 400 });
   }
