@@ -40,11 +40,11 @@ export const AttendanceCard = forwardRef<HTMLDivElement, Props>(function Attenda
         <div className="flex justify-between items-start gap-3">
           <div className="min-w-0">
             <p className="text-body-lg font-medium text-gray-900">{shortenName(child.childName)}</p>
-            <p className="text-[14px] text-gray-500">{shortenName(child.parentName)}</p>
+            <p className="text-body-md text-gray-500">{shortenName(child.parentName)}</p>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             {child.dateOfBirth && (
-              <p className="text-[14px] text-gray-500 whitespace-nowrap">{calculateAge(child.dateOfBirth)}</p>
+              <p className="text-body-md text-gray-500 whitespace-nowrap">{calculateAge(child.dateOfBirth)}</p>
             )}
             <div className="flex items-center gap-1.5">
               <ConsentIcon consent={child.imageConsent} />
@@ -58,8 +58,8 @@ export const AttendanceCard = forwardRef<HTMLDivElement, Props>(function Attenda
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-surface-container-highest mt-2.5 pt-2.5">
-          <span className="text-[14px] text-gray-500">{formatSessionValue(child.perSessionValue)} / sessão</span>
-          <span className="text-[14px] px-2.5 py-0.5 rounded-full whitespace-nowrap bg-surface-container text-gray-600">
+          <span className="text-body-md text-gray-500">{formatSessionValue(child.perSessionValue)} / sessão</span>
+          <span className="text-body-md px-2.5 py-0.5 rounded-full whitespace-nowrap bg-surface-container text-gray-600">
             {child.isPack ? 'Pack mensal' : 'Avulso'}
           </span>
         </div>

@@ -151,7 +151,7 @@ export function MonthSelector({
         </button>
         <button
           onClick={() => setIsOpen((o) => !o)}
-          className="flex-1 text-[14px] md:text-body-md font-medium px-2 text-white md:min-w-[120px] text-center hover:text-white/80 transition-colors whitespace-nowrap"
+          className="flex-1 text-body-md font-medium px-2 text-white md:min-w-[120px] text-center hover:text-white/80 transition-colors whitespace-nowrap"
         >
           {label}
         </button>

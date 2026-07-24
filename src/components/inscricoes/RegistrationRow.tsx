@@ -40,42 +40,42 @@ export function RegistrationRow({ registration: reg, order, isExpanded, onToggle
       onClick={onToggle}
     >
       {/* #. Ordem de inscrição */}
-      <td className="py-6 pl-6 pr-3 text-gray-500 whitespace-nowrap">{order}</td>
+      <td className="py-3 md:py-6 pl-3 md:pl-6 pr-3 text-gray-500 whitespace-nowrap">{order}</td>
 
       {/* 1. Estado */}
-      <td className="py-6 px-6">
-        <span className={`inline-flex items-center px-4 py-2 rounded-full text-label-md whitespace-nowrap ${STATUS_PILL[reg.status]}`}>
+      <td className="py-3 md:py-6 px-3 md:px-6">
+        <span className={`inline-flex items-center px-2.5 py-1 md:px-4 md:py-2 rounded-full text-label-md whitespace-nowrap ${STATUS_PILL[reg.status]}`}>
           {STATUS_LABELS[reg.status]}
         </span>
       </td>
 
       {/* 2. Criança(s) */}
-      <td className="py-6 px-6 font-medium text-gray-900">{childrenLabel}</td>
+      <td className="py-3 md:py-6 px-3 md:px-6 font-medium text-gray-900">{childrenLabel}</td>
 
       {/* 3. Idade */}
-      <td className="py-6 px-6 text-gray-500 text-body-md whitespace-nowrap">{ageLabel}</td>
+      <td className="py-3 md:py-6 px-3 md:px-6 text-gray-500 text-body-md whitespace-nowrap">{ageLabel}</td>
 
       {/* 4. Responsável — plain text, no avatar */}
-      <td className="py-6 px-6 text-gray-600">{parentLabel}</td>
+      <td className="py-3 md:py-6 px-3 md:px-6 text-gray-600">{parentLabel}</td>
 
       {/* 5. Plano */}
-      <td className="py-6 px-6 text-gray-600">{shortenPlan(reg.plan)}</td>
+      <td className="py-3 md:py-6 px-3 md:px-6 text-gray-600">{shortenPlan(reg.plan)}</td>
 
       {/* 6. Valor */}
-      <td className="py-6 px-6 font-medium text-gray-900">{reg.total_price}€</td>
+      <td className="py-3 md:py-6 px-3 md:px-6 font-medium text-gray-900">{reg.total_price}€</td>
 
       {/* 7. Fatura */}
-      <td className="py-6 px-6">
+      <td className="py-3 md:py-6 px-3 md:px-6">
         {reg.nif ? <CheckBadge /> : null}
       </td>
 
       {/* 8. Voucher */}
-      <td className="py-6 px-6">
+      <td className="py-3 md:py-6 px-3 md:px-6">
         {reg.voucher_code ? <CheckBadge /> : null}
       </td>
 
       {/* 9. Expand/collapse chevron */}
-      <td className="py-6 pl-6 pr-6 text-on-surface-variant">
+      <td className="py-3 md:py-6 pl-3 md:pl-6 pr-3 md:pr-6 text-on-surface-variant">
         {reg.webhook_error && (
           <Warning size={14} weight="fill" className="text-error inline mr-2" />
         )}

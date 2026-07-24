@@ -4,10 +4,10 @@ import { calculateAge } from '@/lib/age-calculator';
 import { formatSessionValue } from '@/lib/plan-display';
 import { ConsentIcon } from './ConsentIcon';
 
-const TH = 'py-5 px-6 text-label-sm text-gray-500 uppercase tracking-wider font-medium';
+const TH = 'py-3 md:py-5 px-3 md:px-6 text-label-sm text-gray-500 uppercase tracking-wider font-medium';
 const TH_CENTER = `${TH} text-center`;
 const TH_FOTO = `${TH} bg-[#EBF0ED] text-center`;
-const TD_FOTO = 'py-4 px-6 bg-[#F8FDFA]';
+const TD_FOTO = 'py-2 md:py-4 px-3 md:px-6 bg-[#F8FDFA]';
 
 export function SessionTable({ children }: { children: SessionChild[] }) {
   const sorted = [...children].sort((a, b) =>
@@ -34,11 +34,11 @@ export function SessionTable({ children }: { children: SessionChild[] }) {
               key={`${child.childName}-${child.birthDate}`}
               className="border-b border-surface-container-highest hover:bg-surface-container-low transition-colors"
             >
-              <td className="py-4 px-6 font-medium">{child.childName}</td>
-              <td className="py-4 px-6 text-gray-500 whitespace-nowrap">{calculateAge(child.birthDate)}</td>
-              <td className="py-4 px-6 text-gray-600">{child.responsavelName}</td>
-              <td className="py-4 px-6 text-gray-500">{child.phone ?? '—'}</td>
-              <td className="py-4 px-6">
+              <td className="py-2 md:py-4 px-3 md:px-6 font-medium">{child.childName}</td>
+              <td className="py-2 md:py-4 px-3 md:px-6 text-gray-500 whitespace-nowrap">{calculateAge(child.birthDate)}</td>
+              <td className="py-2 md:py-4 px-3 md:px-6 text-gray-600">{child.responsavelName}</td>
+              <td className="py-2 md:py-4 px-3 md:px-6 text-gray-500">{child.phone ?? '—'}</td>
+              <td className="py-2 md:py-4 px-3 md:px-6">
                 <div className="flex justify-center">
                   <ConsentIcon consent={child.consent} />
                 </div>
@@ -54,7 +54,7 @@ export function SessionTable({ children }: { children: SessionChild[] }) {
                   )}
                 </div>
               </td>
-              <td className="py-4 px-6 font-medium">{formatSessionValue(child.perSessionValue)}</td>
+              <td className="py-2 md:py-4 px-3 md:px-6 font-medium">{formatSessionValue(child.perSessionValue)}</td>
             </tr>
           ))}
         </tbody>

@@ -18,7 +18,7 @@ interface Props {
   onStatusChange: (id: string, newStatus: RegistrationStatus) => void;
 }
 
-const TH = 'py-5 px-6 text-label-sm text-gray-500 uppercase tracking-wider font-medium';
+const TH = 'py-3 md:py-5 px-3 md:px-6 text-label-sm text-gray-500 uppercase tracking-wider font-medium';
 
 function childSortKey(reg: RegistrationWithDetails): string {
   return reg.children[0]?.name ?? '';

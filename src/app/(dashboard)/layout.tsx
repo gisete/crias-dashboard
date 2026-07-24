@@ -63,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 						>
 							<List size={22} />
 						</button>
-						<Link href="/" className="text-[17px] font-medium text-white">
+						<Link href="/" className="text-[1.0625rem] font-medium text-white">
 							Crias na Floresta - Gestão
 						</Link>
 					</div>
