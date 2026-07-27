@@ -6,6 +6,8 @@ const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/logout',
   '/api/registrations/webhook',
+  '/api/registrations/prepare',
+  '/api/registrations/confirm',
 ];
 
 export function proxy(request: NextRequest) {
