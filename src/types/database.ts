@@ -49,6 +49,31 @@ export interface RegistrationWithDetails extends Registration {
   children: Child[];
 }
 
+export type ReviewStatus = 'pending' | 'notified' | 'discarded';
+
+export interface UnmatchedSubmission {
+  id: string;
+  email: string;
+  month: string;
+  year: number;
+  month_id: string | null;
+  plan: string;
+  unit_price: number;
+  num_sessions: number;
+  has_photos: boolean;
+  selected_dates: string[];
+  image_consent: string | null;
+  nif: string | null;
+  voucher_code: string | null;
+  notes: string | null;
+  tally_submission_id: string | null;
+  submitted_at: string | null;
+  review_status: ReviewStatus;
+  notified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Month {
   id: string;
   year: number;

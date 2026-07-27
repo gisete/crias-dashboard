@@ -127,13 +127,20 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient();
 
     if (body.tally_submission_id) {
-      const { data: existing } = await supabase
-        .from('registrations')
-        .select('id')
-        .eq('tally_submission_id', body.tally_submission_id)
-        .maybeSingle();
+      const [{ data: existingReg }, { data: existingUnmatched }] = await Promise.all([
+        supabase
+          .from('registrations')
+          .select('id')
+          .eq('tally_submission_id', body.tally_submission_id)
+          .maybeSingle(),
+        supabase
+          .from('unmatched_submissions')
+          .select('id')
+          .eq('tally_submission_id', body.tally_submission_id)
+          .maybeSingle(),
+      ]);
 
-      if (existing) {
+      if (existingReg || existingUnmatched) {
         return NextResponse.json(
           { status: 'duplicate', tally_submission_id: body.tally_submission_id },
           { status: 200 },
@@ -144,6 +151,43 @@ export async function POST(request: NextRequest) {
     const submittedDate = body.submitted_at ? new Date(body.submitted_at) : new Date();
     const submittedYear = submittedDate.getFullYear();
     const selectedDates = normalizeStringArray(body.datas_selecionadas).map(normalizeDateEntry);
+    const parsed = body.plano ? parsePlan(body.plano) : null;
+
+    if (body.brevo_flag === 'not_found') {
+      const monthId = await resolveMonthId(supabase, body.mes, submittedYear);
+
+      const { data: unmatched, error: unmatchedError } = await supabase
+        .from('unmatched_submissions')
+        .insert({
+          email: body.email,
+          month: body.mes ?? '',
+          year: submittedYear,
+          month_id: monthId,
+          plan: body.plano ?? '',
+          unit_price: parsed?.unitPrice ?? 0,
+          num_sessions: parsed?.numSessions ?? 0,
+          has_photos: parsed?.hasPhotos ?? false,
+          selected_dates: selectedDates,
+          image_consent: body.consentimento ?? null,
+          nif: body.nif ?? null,
+          voucher_code: body.voucher ?? null,
+          notes: body.notas ?? null,
+          tally_submission_id: body.tally_submission_id ?? null,
+          submitted_at: body.submitted_at ?? null,
+          review_status: 'pending',
+        })
+        .select('id')
+        .single();
+
+      if (unmatchedError || !unmatched) {
+        throw new Error(`Failed to create unmatched submission: ${unmatchedError?.message}`);
+      }
+
+      return NextResponse.json(
+        { status: 'unmatched', submission_id: unmatched.id },
+        { status: 201 },
+      );
+    }
 
     const [monthId, familyId] = await Promise.all([
       resolveMonthId(supabase, body.mes, submittedYear),
@@ -156,8 +200,6 @@ export async function POST(request: NextRequest) {
       name,
       dob: dobs[i] ? parseDateOfBirth(dobs[i]) : null,
     }));
-
-    const parsed = body.plano ? parsePlan(body.plano) : null;
 
     const { data: registration, error: regError } = await supabase
       .from('registrations')
