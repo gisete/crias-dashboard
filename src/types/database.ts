@@ -31,6 +31,7 @@ export interface Registration {
   invoice_requested: boolean;
   webhook_error: boolean;
   webhook_error_message: string | null;
+  brevo_flag: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -25,4 +25,19 @@ describe('parsePlan', () => {
     const result = parsePlan('Pack mensal 16 sessões + 32 registos fotográficos (264€)');
     expect(result).toEqual({ unitPrice: 264, numSessions: 16, hasPhotos: true });
   });
+
+  it('parses a combined individual + pack plan by summing price and sessions', () => {
+    const result = parsePlan('1 sessão (14€) + Pack mensal 4 sessões (50€)');
+    expect(result).toEqual({ unitPrice: 64, numSessions: 5, hasPhotos: false });
+  });
+
+  it('still parses a single session plan on its own', () => {
+    const result = parsePlan('1 sessão (14€)');
+    expect(result).toEqual({ unitPrice: 14, numSessions: 1, hasPhotos: false });
+  });
+
+  it('still parses a single pack plan on its own', () => {
+    const result = parsePlan('Pack mensal 4 sessões (50€)');
+    expect(result).toEqual({ unitPrice: 50, numSessions: 4, hasPhotos: false });
+  });
 });
