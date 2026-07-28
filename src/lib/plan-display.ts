@@ -24,6 +24,12 @@ export function getInitials(name: string): string {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
+export function getFirstLastName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 2) return name.trim();
+  return `${parts[0]} ${parts[parts.length - 1]}`;
+}
+
 export function formatSessionValue(v: number): string {
   return Number.isInteger(v) ? `${v}€` : `${v.toFixed(2)}€`;
 }

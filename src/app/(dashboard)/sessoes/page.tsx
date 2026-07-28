@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRealtimeRegistrations } from "@/hooks/useRealtimeRegistrations";
 import type { Session, SessionChild } from "@/types/sessions";
-import { fetchSessionsByMonth } from "@/lib/data/sessions";
+import { fetchSessionsByMonth, setPhotosReady } from "@/lib/data/sessions";
 import {
 	getAvailableMonths,
 	getAvailableYears,
@@ -22,6 +22,7 @@ export default function SessoesPage() {
 	const [year, setYear] = useState<number | null>(null);
 	const [slotFilter, setSlotFilter] = useState<SlotFilter>("todas");
 	const [searchQuery, setSearchQuery] = useState("");
+	const [photosOnly, setPhotosOnly] = useState(false);
 	const [sessions, setSessions] = useState<Session[]>([]);
 	const [availableYears, setAvailableYears] = useState<number[]>([]);
 	const [monthsByYear, setMonthsByYear] = useState<Record<number, number[]>>({});
@@ -75,24 +76,55 @@ export default function SessoesPage() {
 		setSearchQuery("");
 	}
 
+	const totalPhotoCount = useMemo(
+		() =>
+			sessions.reduce(
+				(sum, s) =>
+					sum + s.children.filter((c) => c.registrationStatus === "pago_confirmado" && c.hasPhotoPlan).length,
+				0,
+			),
+		[sessions],
+	);
+
 	const visibleSessions = useMemo(() => {
 		return sessions.filter((s) => {
 			const confirmed = s.children.filter((c) => c.registrationStatus === "pago_confirmado");
 			if (confirmed.length === 0) return false;
+			if (photosOnly && !confirmed.some((c) => c.hasPhotoPlan)) return false;
 			if (slotFilter !== "todas" && s.slot !== slotFilter) return false;
 			if (searchQuery.trim()) {
 				const q = searchQuery.toLowerCase().trim();
-				return confirmed.some((c) => c.childName.toLowerCase().includes(q));
+				const searchable = photosOnly ? confirmed.filter((c) => c.hasPhotoPlan) : confirmed;
+				return searchable.some((c) => c.childName.toLowerCase().includes(q));
 			}
 			return true;
 		});
-	}, [sessions, slotFilter, searchQuery]);
+	}, [sessions, slotFilter, searchQuery, photosOnly]);
 
 	function getDisplayChildren(session: Session): SessionChild[] {
 		const confirmed = session.children.filter((c) => c.registrationStatus === "pago_confirmado");
-		if (!searchQuery.trim()) return confirmed;
-		const q = searchQuery.toLowerCase().trim();
-		return confirmed.filter((c) => c.childName.toLowerCase().includes(q));
+		let filtered = photosOnly ? confirmed.filter((c) => c.hasPhotoPlan) : confirmed;
+		if (searchQuery.trim()) {
+			const q = searchQuery.toLowerCase().trim();
+			filtered = filtered.filter((c) => c.childName.toLowerCase().includes(q));
+		}
+		return filtered;
+	}
+
+	async function handleTogglePhotosReady(sessionChildId: string, ready: boolean) {
+		const prevSessions = sessions;
+		setSessions((prev) =>
+			prev.map((s) => ({
+				...s,
+				children: s.children.map((c) =>
+					c.sessionChildId === sessionChildId ? { ...c, photosReady: ready } : c,
+				),
+			})),
+		);
+		const result = await setPhotosReady(sessionChildId, ready);
+		if (!result.success) {
+			setSessions(prevSessions);
+		}
 	}
 
 	const today = getTodayLisbon();
@@ -130,6 +162,29 @@ export default function SessoesPage() {
 				<SessionFilters active={slotFilter} onChange={setSlotFilter} />
 			</div>
 
+			<div className="flex justify-end mb-6">
+				<button
+					onClick={() => setPhotosOnly((v) => !v)}
+					className="inline-flex items-center gap-2.5 touch-manipulation select-none"
+					role="switch"
+					aria-checked={photosOnly}
+				>
+					<div
+						className={`relative w-10 h-[22px] rounded-full transition-colors ${
+							photosOnly ? "bg-on-primary-fixed" : "bg-gray-300"
+						}`}
+					>
+						<div
+							className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-[left] ${
+								photosOnly ? "left-5" : "left-[2px]"
+							}`}
+						/>
+					</div>
+					<span className="text-body-md font-medium text-gray-900">Só fotos</span>
+					<span className="text-body-md text-gray-500">({totalPhotoCount})</span>
+				</button>
+			</div>
+
 			{visibleSessions.length === 0 ? (
 				<div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest p-16 text-center">
 					<p className="text-body-lg text-gray-500">Nenhuma sessão encontrada.</p>
@@ -145,6 +200,7 @@ export default function SessoesPage() {
 									session={session}
 									displayChildren={getDisplayChildren(session)}
 									isToday={session.date === today}
+									onTogglePhotosReady={handleTogglePhotosReady}
 								/>
 							))
 						) : pastSessions.length > 0 ? (
@@ -156,7 +212,12 @@ export default function SessoesPage() {
 						<div className="flex flex-col gap-4">
 							<h2 className="text-title-lg text-gray-500">Sessões passadas</h2>
 							{pastSessions.map((session) => (
-								<SessionCard key={session.id} session={session} displayChildren={getDisplayChildren(session)} />
+								<SessionCard
+								key={session.id}
+								session={session}
+								displayChildren={getDisplayChildren(session)}
+								onTogglePhotosReady={handleTogglePhotosReady}
+							/>
 							))}
 						</div>
 					)}

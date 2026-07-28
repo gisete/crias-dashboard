@@ -3,13 +3,14 @@ export type { ConsentType };
 export type Slot = 'manhã' | 'tarde';
 
 export interface SessionChild {
+  sessionChildId: string;
   childName: string;
   birthDate: string;          // ISO date, e.g. '2021-07-20'
   responsavelName: string;
-  phone: string | null;
   consent: ConsentType;
   hasPhotoPlan: boolean;
   perSessionValue: number;    // euros
+  photosReady: boolean;
   registrationStatus: string; // 'pago_confirmado' | 'pendente' | 'a_pagar' | 'lembrete'
 }
 

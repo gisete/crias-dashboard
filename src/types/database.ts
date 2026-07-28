@@ -99,5 +99,6 @@ export interface SessionChild {
   registration_id: string;
   present: boolean | null;
   marked_at: string | null;
+  photos_ready: boolean;
   created_at: string;
 }

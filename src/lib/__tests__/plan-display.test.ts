@@ -1,4 +1,4 @@
-import { shortenPlan, getInitials, formatSessionValue } from '../plan-display';
+import { shortenPlan, getInitials, formatSessionValue, getFirstLastName } from '../plan-display';
 
 describe('shortenPlan', () => {
   it('returns "1 sessão" for a single session plan', () => {
@@ -29,6 +29,28 @@ describe('getInitials', () => {
 
   it('handles extra whitespace', () => {
     expect(getInitials('  Maria  João  ')).toBe('MJ');
+  });
+});
+
+describe('getFirstLastName', () => {
+  it('returns first and last for a three-part name', () => {
+    expect(getFirstLastName('Ana Sofia Mendes')).toBe('Ana Mendes');
+  });
+
+  it('returns unchanged for a two-part name', () => {
+    expect(getFirstLastName('Carlos Silva')).toBe('Carlos Silva');
+  });
+
+  it('returns unchanged for a single name', () => {
+    expect(getFirstLastName('Carlos')).toBe('Carlos');
+  });
+
+  it('handles extra whitespace', () => {
+    expect(getFirstLastName('  Maria  João  Ferreira  ')).toBe('Maria Ferreira');
+  });
+
+  it('handles four-part name', () => {
+    expect(getFirstLastName('Maria João Costa Ferreira')).toBe('Maria Ferreira');
   });
 });
 

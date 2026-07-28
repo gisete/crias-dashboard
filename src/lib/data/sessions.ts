@@ -14,7 +14,9 @@ interface SessionRow {
 }
 
 interface SessionChildRow {
+  id: string;
   session_id: string;
+  photos_ready: boolean;
   child: { name: string; date_of_birth: string | null } | null;
   registration: {
     plan: string;
@@ -22,7 +24,7 @@ interface SessionChildRow {
     num_sessions: number;
     image_consent: string | null;
     status: string;
-    family: { parent_name: string; phone: string | null } | null;
+    family: { parent_name: string } | null;
   } | null;
 }
 
@@ -46,7 +48,7 @@ export async function fetchSessionsByMonth(month: string, year: number): Promise
   const { data: childrenData, error: childrenError } = await supabaseClient
     .from('session_children')
     .select(
-      'session_id, child:children(name, date_of_birth), registration:registrations(plan, total_price, num_sessions, image_consent, status, family:families(parent_name, phone))',
+      'id, session_id, photos_ready, child:children(name, date_of_birth), registration:registrations(plan, total_price, num_sessions, image_consent, status, family:families(parent_name))',
     )
     .in('session_id', sessionIds);
 
@@ -69,13 +71,14 @@ export async function fetchSessionsByMonth(month: string, year: number): Promise
         : 0;
 
     const sessionChild: SessionChild = {
+      sessionChildId: row.id,
       childName: row.child.name,
       birthDate: row.child.date_of_birth ?? '',
       responsavelName: row.registration.family?.parent_name ?? '',
-      phone: row.registration.family?.phone ?? null,
       consent,
       hasPhotoPlan: hasPhotos,
       perSessionValue,
+      photosReady: row.photos_ready,
       registrationStatus: row.registration.status,
     };
 
@@ -101,4 +104,17 @@ export async function fetchSessionsByMonth(month: string, year: number): Promise
       children: childrenBySession.get(s.id) ?? [],
       capacity: s.capacity,
     }));
+}
+
+export async function setPhotosReady(
+  sessionChildId: string,
+  ready: boolean,
+): Promise<{ success: boolean }> {
+  const { error } = await supabaseClient
+    .from('session_children')
+    .update({ photos_ready: ready })
+    .eq('id', sessionChildId);
+
+  if (error) console.error('setPhotosReady error:', error);
+  return { success: !error };
 }
