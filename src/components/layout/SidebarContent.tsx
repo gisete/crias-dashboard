@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardText, CalendarCheck, CalendarDots, UserCheck, Eye, SignOut, type Icon } from "@phosphor-icons/react";
+import { ClipboardText, CalendarCheck, CalendarDots, UserCheck, Eye, SignOut, BookOpen, type Icon } from "@phosphor-icons/react";
 import { fetchUnmatchedCount } from "@/lib/data/unmatched-submissions";
 
 interface NavItem {
@@ -102,7 +102,17 @@ export function SidebarContent({ onNavigate, onLogout }: Props) {
 				})}
 			</nav>
 
-			<div className="mt-auto pt-8 border-t border-white/10">
+			<div className="mt-auto pt-8 border-t border-white/10 flex flex-col gap-1">
+				<Link
+					href="/sobre"
+					onClick={onNavigate}
+					className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+						pathname === "/sobre" ? "bg-white/10 text-white font-bold" : "text-gray-300 hover:bg-white/5"
+					}`}
+				>
+					<BookOpen size={20} weight={pathname === "/sobre" ? "fill" : "regular"} />
+					<span className="text-body-md">Sobre</span>
+				</Link>
 				<button
 					onClick={onLogout}
 					className="flex items-center gap-4 p-3 text-gray-300 hover:bg-white/5 rounded-lg transition-colors w-full text-left"
