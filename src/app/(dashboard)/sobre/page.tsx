@@ -74,15 +74,28 @@ export default function SobrePage() {
         <section id="novo-mes">
           <h2 className="text-title-lg text-gray-900 mb-4">1. Como começar um novo mês</h2>
           <p className="mb-3">
-            Antes de abrir inscrições para um novo mês, é preciso prepará-lo no sistema:
+            Antes de abrir inscrições para um novo mês, é preciso prepará-lo em dois sítios: no painel de gestão e no formulário Tally.
           </p>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3">No painel de gestão</h3>
           <ol className="list-decimal list-inside flex flex-col gap-2 mb-4 pl-1">
             <li>Ir à página <strong>Meses</strong> e clicar no botão <strong>+</strong> para criar o novo mês</li>
-            <li>O mês é criado com estado <strong>Ativo</strong></li>
-            <li>No Tally, atualizar o campo escondido <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[13px]">mes</code> para corresponder ao nome do novo mês (ex: &quot;agosto&quot;)</li>
-            <li>Publicar ou partilhar o formulário Tally</li>
-            <li>As inscrições começam a aparecer automaticamente na página Inscrições</li>
+            <li>O mês é criado com estado <strong>Ativo</strong> — as inscrições vão ser associadas a ele automaticamente</li>
           </ol>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3">No Tally</h3>
+          <p className="mb-3">
+            Existem dois formulários no Tally — <strong>Formulário A</strong> e <strong>Formulário B</strong> — que se usam em meses alternados. Enquanto um está a receber inscrições, o outro fica livre para o mês seguinte.
+          </p>
+          <ol className="list-decimal list-inside flex flex-col gap-2 mb-4 pl-1">
+            <li>Identificar qual formulário está livre (A ou B)</li>
+            <li>Abrir o formulário no Tally e atualizar o título visível (ex: &quot;Inscrições Abertas – Agosto 2026&quot;)</li>
+            <li>Ao copiar o link para partilhar, adicionar o parâmetro do mês no final: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[13px]">?mes=agosto</code></li>
+            <li>O link completo fica, por exemplo: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[13px] break-all">https://tally.so/r/XXXX?mes=agosto</code></li>
+          </ol>
+          <Tip>
+            O link base do formulário nunca muda — apenas o parâmetro <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[13px]">?mes=</code> é atualizado em cada mês. O nome do mês deve ser em minúsculas e sem acento (ex: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[13px]">marco</code>, <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[13px]">junho</code>).
+          </Tip>
           <Tip>
             É possível ter dois meses ativos ao mesmo tempo — por exemplo, quando um mês está a fechar e o próximo já está aberto para inscrições.
           </Tip>
