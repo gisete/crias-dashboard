@@ -1,14 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardText, CalendarCheck, CalendarDots, UserCheck, SignOut, type Icon } from "@phosphor-icons/react";
+import { ClipboardText, CalendarCheck, CalendarDots, UserCheck, Eye, SignOut, type Icon } from "@phosphor-icons/react";
+import { fetchUnmatchedCount } from "@/lib/data/unmatched-submissions";
 
 interface NavItem {
 	href: string;
 	label: string;
 	icon: Icon;
 	isActive: (pathname: string) => boolean;
+	badge?: React.ReactNode;
+}
+
+function UnmatchedBadge() {
+	const [count, setCount] = useState(0);
+
+	useEffect(() => {
+		fetchUnmatchedCount().then(setCount);
+	}, []);
+
+	if (count === 0) return null;
+
+	return (
+		<span
+			className="text-[11px] px-1.5 rounded-full min-w-[18px] text-center font-medium"
+			style={{ backgroundColor: "#F0C775", color: "#633806" }}
+		>
+			{count}
+		</span>
+	);
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -36,6 +58,13 @@ const NAV_ITEMS: NavItem[] = [
 		icon: UserCheck,
 		isActive: (p) => p.startsWith("/presencas"),
 	},
+	{
+		href: "/revisao",
+		label: "Revisão",
+		icon: Eye,
+		isActive: (p) => p.startsWith("/revisao"),
+		badge: <UnmatchedBadge />,
+	},
 ];
 
 interface Props {
@@ -54,7 +83,7 @@ export function SidebarContent({ onNavigate, onLogout }: Props) {
 			</div>
 
 			<nav className="flex-1 flex flex-col gap-2">
-				{NAV_ITEMS.map(({ href, label, icon: Icon, isActive }) => {
+				{NAV_ITEMS.map(({ href, label, icon: Icon, isActive, badge }) => {
 					const active = isActive(pathname);
 					return (
 						<Link
@@ -67,6 +96,7 @@ export function SidebarContent({ onNavigate, onLogout }: Props) {
 						>
 							<Icon size={20} weight={active ? "fill" : "regular"} />
 							<span className="text-body-md">{label}</span>
+							{badge}
 						</Link>
 					);
 				})}

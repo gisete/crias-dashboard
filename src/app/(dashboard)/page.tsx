@@ -18,8 +18,10 @@ import { MONTH_NAMES } from '@/lib/months';
 import { MonthSelector } from '@/components/inscricoes/MonthSelector';
 import { StatCards } from '@/components/inscricoes/StatCards';
 import { UnassignedRegistrations } from '@/components/inscricoes/UnassignedRegistrations';
+import { UnmatchedAlert } from '@/components/inscricoes/UnmatchedAlert';
 import { StatusFilter } from '@/components/inscricoes/StatusFilter';
 import { RegistrationsTable } from '@/components/inscricoes/RegistrationsTable';
+import { fetchUnmatchedCount } from '@/lib/data/unmatched-submissions';
 
 type FilterKey = 'todos' | 'pendente' | 'a_pagar' | 'lembrete' | 'pago_confirmado' | 'cancelado';
 
@@ -43,6 +45,7 @@ export default function InscricoesPage() {
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [monthsByYear, setMonthsByYear] = useState<Record<number, number[]>>({});
   const [unassigned, setUnassigned] = useState<RegistrationWithDetails[]>([]);
+  const [unmatchedCount, setUnmatchedCount] = useState(0);
 
   useEffect(() => {
     getLatestActiveMonth().then((result) => {
@@ -73,6 +76,7 @@ export default function InscricoesPage() {
 
   const refetch = useCallback(() => {
     fetchUnassignedRegistrations().then(setUnassigned);
+    fetchUnmatchedCount().then(setUnmatchedCount);
     if (!month || !year) return;
     fetchRegistrations(month, year, activeFilter).then(setRegistrations);
     fetchMonthStats(month, year).then(setStats);
@@ -144,6 +148,8 @@ export default function InscricoesPage() {
         monthsByYear={monthsByYear}
         onAssigned={refetch}
       />
+
+      <UnmatchedAlert count={unmatchedCount} />
 
       <StatusFilter active={activeFilter} counts={counts} onChange={handleFilterChange} />
 
