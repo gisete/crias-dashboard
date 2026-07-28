@@ -1,34 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { parseDateOfBirth } from '@/lib/date-parser';
-
-interface MakeResyncResponse {
-  FIRSTNAME?: string;
-  TEL_SMS?: string;
-  CHILD_NAME?: string;
-  CHILD_DOB?: string | { value?: string };
-}
-
-// Brevo stores some DOBs as {"value":"06/11/2025"}; Make interpolates that
-// raw into its JSON response, producing an invalid body. Unwrap the pattern
-// down to just the inner content.
-const WRAPPED_VALUE = /\{"value":"([^"]+)"\}/g;
-
-/** Handles CHILD_DOB arriving as a plain string, a wrapped string, or —
- * should Make start escaping properly — a parsed {value} object. */
-function unwrapDob(raw: MakeResyncResponse['CHILD_DOB']): string | undefined {
-  if (raw && typeof raw === 'object') {
-    return typeof raw.value === 'string' ? raw.value : undefined;
-  }
-  return raw?.replace(WRAPPED_VALUE, '$1');
-}
-
-function splitList(value: string | undefined): string[] {
-  return (value ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
+import {
+  callBrevoLookup,
+  splitList,
+  unwrapDob,
+  BrevoLookupError,
+  type MakeResyncResponse,
+} from '@/lib/brevo-sync';
 
 export async function POST(
   _request: NextRequest,
@@ -69,48 +48,17 @@ export async function POST(
     return NextResponse.json({ error: 'Família não encontrada.' }, { status: 404 });
   }
 
-  let makeResponse: Response;
+  let payload: MakeResyncResponse | null;
   try {
-    makeResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: family.email }),
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Não foi possível contactar o serviço de sincronização.' },
-      { status: 502 },
-    );
+    payload = await callBrevoLookup(family.email);
+  } catch (error) {
+    if (error instanceof BrevoLookupError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
   }
 
-  if (!makeResponse.ok) {
-    return NextResponse.json(
-      { error: `O serviço de sincronização respondeu com erro (${makeResponse.status}).` },
-      { status: 502 },
-    );
-  }
-
-  let payload: MakeResyncResponse;
-  try {
-    // Read as text and unwrap Brevo's {"value":"..."} fragments before
-    // parsing — left as-is they make the whole body invalid JSON.
-    const rawBody = await makeResponse.text();
-    payload = JSON.parse(rawBody.replace(WRAPPED_VALUE, '$1'));
-  } catch {
-    return NextResponse.json(
-      { error: 'Resposta inválida do serviço de sincronização.' },
-      { status: 502 },
-    );
-  }
-
-  const hasAnyField =
-    payload.FIRSTNAME !== undefined ||
-    payload.TEL_SMS !== undefined ||
-    payload.CHILD_NAME !== undefined ||
-    payload.CHILD_DOB !== undefined;
-
-  if (!hasAnyField) {
+  if (!payload) {
     return NextResponse.json(
       { error: 'A resposta do Brevo não contém os dados esperados.' },
       { status: 502 },
