@@ -57,6 +57,18 @@ describe('joinTallyArray', () => {
   it('returns null for an empty array', () => {
     expect(joinTallyArray([])).toBeNull();
   });
+
+  it('trims whitespace from array values', () => {
+    expect(joinTallyArray(['9 (manhã)                  '])).toBe('9 (manhã)');
+  });
+
+  it('trims whitespace from multiple array values', () => {
+    expect(joinTallyArray(['9 (manhã)  ', '  16 (tarde)  '])).toBe('9 (manhã), 16 (tarde)');
+  });
+
+  it('trims whitespace from string value', () => {
+    expect(joinTallyArray('  9 (manhã)  ')).toBe('9 (manhã)');
+  });
 });
 
 describe('combinePlans', () => {
@@ -80,15 +92,51 @@ describe('combinePlans', () => {
 });
 
 describe('isExistingFamily', () => {
-  it('returns true for a "Sim" answer', () => {
+  // Array inputs (radio/dropdown from Tally)
+  it('returns true for array starting with Sim', () => {
     expect(isExistingFamily(['Sim, já participámos antes'])).toBe(true);
   });
 
+  it('returns false for array starting with Não', () => {
+    expect(isExistingFamily(['Não, é a primeira vez'])).toBe(false);
+  });
+
+  it('returns false for array without Sim/Não prefix', () => {
+    expect(isExistingFamily(['Já participámos antes (maio, junho ou julho)'])).toBe(false);
+  });
+
+  // Boolean inputs (checkbox-style)
+  it('returns true for boolean true', () => {
+    expect(isExistingFamily(true)).toBe(true);
+  });
+
+  it('returns false for boolean false', () => {
+    expect(isExistingFamily(false)).toBe(false);
+  });
+
+  // String inputs
+  it('returns true for string starting with Sim', () => {
+    expect(isExistingFamily('Sim')).toBe(true);
+  });
+
+  it('returns false for string starting with Não', () => {
+    expect(isExistingFamily('Não')).toBe(false);
+  });
+
+  // Edge cases
   it('returns false for null', () => {
     expect(isExistingFamily(null)).toBe(false);
   });
 
-  it('returns false for a "Não" answer', () => {
-    expect(isExistingFamily(['Não'])).toBe(false);
+  it('returns false for undefined', () => {
+    expect(isExistingFamily(undefined)).toBe(false);
+  });
+
+  it('returns false for empty array', () => {
+    expect(isExistingFamily([])).toBe(false);
+  });
+
+  it('is case-insensitive', () => {
+    expect(isExistingFamily(['SIM, somos família Crias'])).toBe(true);
   });
 });

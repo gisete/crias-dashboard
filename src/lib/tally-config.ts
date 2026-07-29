@@ -38,10 +38,27 @@ const FORM_A: TallyFormConfig = {
   },
 };
 
-// Placeholder for Form B — will be filled when field IDs are available
-// const FORM_B: TallyFormConfig = { ... };
+const FORM_B: TallyFormConfig = {
+  formId: 'QKp8Nl',
+  label: 'B',
+  fields: {
+    email: 'question_qWEV2d',
+    responsavel_nome: 'question_NYBoeW',
+    responsavel_telefone: 'question_QYBV6A',
+    is_existing_family: 'question_XYB0Kd',
+    criancas_nomes: ['question_e2xRdE', 'question_WYpzvP', 'question_aErd8E'],
+    criancas_nascimentos: ['question_1v2V1O', 'question_MYdR9g', 'question_JDkzNY'],
+    plano_individual: 'question_6vQNXO',
+    plano_pack: 'question_7v9x89',
+    datas_selecionadas: 'question_br4d02',
+    consentimento: 'question_ADbvVW',
+    voucher: 'question_KDB1qk',
+    notas: 'question_LYMpQO',
+    nif: 'question_pWPOlZ',
+  },
+};
 
-const FORMS: TallyFormConfig[] = [FORM_A];
+const FORMS: TallyFormConfig[] = [FORM_A, FORM_B];
 
 export function getFormConfig(formId: string): TallyFormConfig | undefined {
   return FORMS.find((f) => f.formId === formId);

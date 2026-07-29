@@ -34,12 +34,12 @@ export function collectTallyFields(
  */
 export function joinTallyArray(value: unknown): string | null {
   if (Array.isArray(value)) {
-    const strings = value.filter(
-      (v): v is string => typeof v === 'string' && v.trim() !== ''
-    );
+    const strings = value
+      .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+      .map((v) => v.trim());
     return strings.length > 0 ? strings.join(', ') : null;
   }
-  if (typeof value === 'string' && value.trim() !== '') return value;
+  if (typeof value === 'string' && value.trim() !== '') return value.trim();
   return null;
 }
 
@@ -56,9 +56,27 @@ export function combinePlans(individual: unknown, pack: unknown): string | null 
 
 /**
  * Determine if submission is from an existing family.
- * Tally field value is ["Sim, já participámos antes"] or similar.
+ *
+ * Convention: Tally answer options must start with "Sim" or "Não".
+ * The rest of the text can say anything.
+ *
+ * Handles all shapes Tally may send:
+ * - boolean (checkbox) → true means existing
+ * - array of strings (radio/dropdown) → check first non-empty element
+ * - plain string → check directly
  */
 export function isExistingFamily(value: unknown): boolean {
-  const str = unwrapTallyValue(value);
-  return str !== null && str.toLowerCase().includes('sim');
+  if (typeof value === 'boolean') return value;
+
+  if (Array.isArray(value)) {
+    return value.some(
+      (v) => typeof v === 'string' && v.trim().toLowerCase().startsWith('sim')
+    );
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase().startsWith('sim');
+  }
+
+  return false;
 }
