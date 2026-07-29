@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { capitalizeMonth } from '@/lib/months';
 
 export async function POST(
   _request: NextRequest,
@@ -33,7 +34,7 @@ export async function POST(
           status: 'email_nao_encontrado',
           email: submission.email,
           plan: submission.plan,
-          month: submission.month,
+          month: capitalizeMonth(submission.month),
           year: submission.year,
           selected_dates: submission.selected_dates,
         }),

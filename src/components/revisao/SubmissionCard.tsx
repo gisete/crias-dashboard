@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PencilSimple, Envelope, Trash, ArrowClockwise, CircleNotch, X, Check } from '@phosphor-icons/react';
 import type { UnmatchedSubmission } from '@/types/database';
 import { shortenPlan } from '@/lib/plan-display';
-import { MONTH_NAMES, MONTH_LABELS } from '@/lib/months';
+import { capitalizeMonth } from '@/lib/months';
 import { useToast } from '@/contexts/ToastContext';
 import { verifySubmission, notifySubmission, discardSubmission } from '@/lib/data/unmatched-submissions';
 
@@ -41,8 +41,7 @@ function formatDayMonth(dateStr: string): string {
 function formatDatesSummary(dates: string[], month: string): string {
   if (dates.length === 0) return '';
 
-  const monthLabel = MONTH_LABELS[MONTH_NAMES.indexOf(month.toLowerCase())] ?? '';
-  const monthAbbrev = monthLabel.slice(0, 3);
+  const monthAbbrev = capitalizeMonth(month).slice(0, 3);
 
   const groups = new Map<string, string[]>();
   for (const entry of dates) {
@@ -116,7 +115,7 @@ export function SubmissionCard({ submission, onVerified, onNotified, onDiscarded
     setLoading(null);
   }
 
-  const monthLabel = MONTH_LABELS[MONTH_NAMES.indexOf(submission.month.toLowerCase())] ?? submission.month;
+  const monthLabel = capitalizeMonth(submission.month);
 
   return (
     <div

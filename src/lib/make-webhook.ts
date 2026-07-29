@@ -1,17 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
-import { MONTH_TO_NUMBER, MONTH_LABELS } from '@/lib/months';
+import { capitalizeMonth } from '@/lib/months';
 import type { RegistrationStatus } from '@/types/database';
-
-/**
- * "julho" -> "Julho". Falls back to a plain capitalized first letter for
- * unrecognized input instead of throwing, since this only feeds an email
- * subject line.
- */
-function capitalizeMonth(month: string): string {
-  const monthNumber = MONTH_TO_NUMBER[month.toLowerCase()];
-  if (monthNumber) return MONTH_LABELS[monthNumber - 1];
-  return month.charAt(0).toUpperCase() + month.slice(1);
-}
 
 export interface WebhookRegistration {
   id: string;
