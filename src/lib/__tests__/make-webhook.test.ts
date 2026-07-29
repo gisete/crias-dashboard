@@ -34,8 +34,8 @@ describe('buildStatusWebhookPayload', () => {
     expect(result).toEqual({
       status: 'pago_confirmado',
       registration_id: 'reg-1',
-      responsavel_nome: 'Maria Silva',
-      responsavel_email: 'maria@example.com',
+      nome: 'Maria Silva',
+      email: 'maria@example.com',
       responsavel_telefone: '912345678',
       criancas_nomes: 'Ana, Bruno',
       mes: 'Julho',

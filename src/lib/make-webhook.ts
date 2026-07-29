@@ -32,8 +32,8 @@ export interface WebhookChild {
 export interface StatusWebhookPayload {
   status: RegistrationStatus;
   registration_id: string;
-  responsavel_nome: string;
-  responsavel_email: string;
+  nome: string;
+  email: string;
   responsavel_telefone: string | null;
   criancas_nomes: string;
   mes: string;
@@ -65,8 +65,8 @@ export function buildStatusWebhookPayload(
   return {
     status,
     registration_id: registration.id,
-    responsavel_nome: family.parent_name,
-    responsavel_email: family.email,
+    nome: family.parent_name,
+    email: family.email,
     responsavel_telefone: family.phone,
     criancas_nomes: children.map((c) => c.name).join(', '),
     mes: capitalizeMonth(registration.month),
