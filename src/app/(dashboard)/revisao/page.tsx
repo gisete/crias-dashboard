@@ -42,6 +42,10 @@ export default function RevisaoPage() {
     showToast('Inscrição descartada');
   }
 
+  function handleEmailUpdated(id: string, email: string) {
+    setSubmissions((prev) => prev.map((s) => (s.id === id ? { ...s, email } : s)));
+  }
+
   return (
     <>
       <div className="flex items-center gap-3 mb-2">
@@ -94,6 +98,7 @@ export default function RevisaoPage() {
               onVerified={handleVerified}
               onNotified={handleNotified}
               onDiscarded={handleDiscarded}
+              onEmailUpdated={handleEmailUpdated}
             />
           ))}
         </div>

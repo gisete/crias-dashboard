@@ -13,6 +13,7 @@ interface Props {
   onVerified: (id: string) => void;
   onNotified: (id: string, notifiedAt: string) => void;
   onDiscarded: (id: string) => void;
+  onEmailUpdated: (id: string, email: string) => void;
 }
 
 function timeAgo(dateStr: string): string {
@@ -58,7 +59,7 @@ function formatDatesSummary(dates: string[], month: string): string {
     .join(' · ');
 }
 
-export function SubmissionCard({ submission, onVerified, onNotified, onDiscarded }: Props) {
+export function SubmissionCard({ submission, onVerified, onNotified, onDiscarded, onEmailUpdated }: Props) {
   const { showToast } = useToast();
   const [editing, setEditing] = useState(false);
   const [draftEmail, setDraftEmail] = useState(submission.email);
@@ -76,13 +77,19 @@ export function SubmissionCard({ submission, onVerified, onNotified, onDiscarded
 
   async function handleVerify() {
     setLoading('verify');
-    const result = await verifySubmission(submission.id, draftEmail);
+    const normalizedEmail = draftEmail.trim().toLowerCase();
+    const result = await verifySubmission(submission.id, normalizedEmail);
     if (result.error) {
       showToast(result.error, 'error');
-    } else if (result.found) {
-      onVerified(submission.id);
     } else {
-      showToast('Email não encontrado no Brevo', 'error');
+      if (normalizedEmail !== submission.email) {
+        onEmailUpdated(submission.id, normalizedEmail);
+      }
+      if (result.found) {
+        onVerified(submission.id);
+      } else {
+        showToast('O email não foi encontrado no Brevo. Contacte a família diretamente.', 'error');
+      }
     }
     setLoading(null);
   }

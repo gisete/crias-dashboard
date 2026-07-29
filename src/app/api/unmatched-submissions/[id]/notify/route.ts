@@ -30,7 +30,7 @@ export async function POST(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'email_nao_encontrado',
+          status: 'email_nao_encontrado',
           email: submission.email,
           plan: submission.plan,
           month: submission.month,
