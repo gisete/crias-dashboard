@@ -1,3 +1,4 @@
+// Deploy test comment — safe to remove
 export type TallyFormConfig = {
   formId: string;
   label: string;
