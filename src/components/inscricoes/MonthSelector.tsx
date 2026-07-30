@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { MONTH_NAMES as MONTHS, MONTH_LABELS } from '@/lib/months';
+import { saveSelectedMonth } from '@/lib/month-storage';
 
 const MIN_YEAR = 2025;
 const MAX_YEAR = new Date().getFullYear() + 1;
@@ -94,12 +95,17 @@ export function MonthSelector({
   const prevTarget = findPrevTarget();
   const nextTarget = findNextTarget();
 
+  function handleChange(m: string, y: number) {
+    saveSelectedMonth(m, y);
+    onChange(m, y);
+  }
+
   function prev() {
-    if (prevTarget) onChange(prevTarget.month, prevTarget.year);
+    if (prevTarget) handleChange(prevTarget.month, prevTarget.year);
   }
 
   function next() {
-    if (nextTarget) onChange(nextTarget.month, nextTarget.year);
+    if (nextTarget) handleChange(nextTarget.month, nextTarget.year);
   }
 
   // ── Dropdown: year navigation ─────────────────────────────────────
@@ -127,7 +133,7 @@ export function MonthSelector({
 
   // ── Dropdown: month list ──────────────────────────────────────────
   function selectMonth(mIdx: number) {
-    onChange(MONTHS[mIdx], pickerYear);
+    handleChange(MONTHS[mIdx], pickerYear);
     setIsOpen(false);
   }
 

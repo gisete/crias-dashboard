@@ -10,8 +10,9 @@ import {
 	getCurrentActiveMonth,
 	getLatestActiveMonth,
 } from "@/lib/data/registrations";
-import { MONTH_NAMES } from "@/lib/months";
+import { MONTH_NAMES, MONTH_TO_NUMBER } from "@/lib/months";
 import { getTodayLisbon } from "@/lib/date-utils";
+import { readStoredMonth } from "@/lib/month-storage";
 import { MonthSelector } from "@/components/inscricoes/MonthSelector";
 import { SessionSearch } from "@/components/sessoes/SessionSearch";
 import { SessionFilters, type SlotFilter } from "@/components/sessoes/SessionFilters";
@@ -27,8 +28,24 @@ export default function SessoesPage() {
 	const [availableYears, setAvailableYears] = useState<number[]>([]);
 	const [monthsByYear, setMonthsByYear] = useState<Record<number, number[]>>({});
 
+	const refreshAvailableMonths = useCallback(async () => {
+		const years = await getAvailableYears();
+		setAvailableYears(years);
+		const entries = await Promise.all(years.map(async (y) => [y, await getAvailableMonths(y)] as const));
+		const monthsMap = Object.fromEntries(entries);
+		setMonthsByYear(monthsMap);
+		return monthsMap;
+	}, []);
+
 	useEffect(() => {
-		async function loadDefaultMonth() {
+		async function init() {
+			const monthsMap = await refreshAvailableMonths();
+			const stored = readStoredMonth();
+			if (stored && monthsMap[stored.year]?.includes(MONTH_TO_NUMBER[stored.month])) {
+				setMonth(stored.month);
+				setYear(stored.year);
+				return;
+			}
 			const current = await getCurrentActiveMonth();
 			if (current) {
 				setMonth(MONTH_NAMES[current.month - 1]);
@@ -45,18 +62,7 @@ export default function SessoesPage() {
 			setMonth(MONTH_NAMES[now.getMonth()]);
 			setYear(now.getFullYear());
 		}
-		loadDefaultMonth();
-	}, []);
-
-	const refreshAvailableMonths = useCallback(async () => {
-		const years = await getAvailableYears();
-		setAvailableYears(years);
-		const entries = await Promise.all(years.map(async (y) => [y, await getAvailableMonths(y)] as const));
-		setMonthsByYear(Object.fromEntries(entries));
-	}, []);
-
-	useEffect(() => {
-		refreshAvailableMonths();
+		init();
 	}, [refreshAvailableMonths]);
 
 	const refetch = useCallback(() => {

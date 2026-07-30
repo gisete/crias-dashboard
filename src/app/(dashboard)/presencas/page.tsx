@@ -21,6 +21,7 @@ import {
 import { CalendarBlank, CaretDown, CaretLeft, CaretRight, CaretUp } from '@phosphor-icons/react';
 import { SLOT_PILL, SLOT_LABEL } from '@/lib/slot-utils';
 import { getTodayLisbon } from '@/lib/date-utils';
+import { readStoredMonth } from '@/lib/month-storage';
 
 const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -197,8 +198,26 @@ export default function PresencasPage() {
     setPhotosOnly(false);
   }, [selectedDate]);
 
+  const refreshAvailableMonths = useCallback(async () => {
+    const years = await getAvailableYears();
+    setAvailableYears(years);
+    const entries = await Promise.all(
+      years.map(async (y) => [y, await getAvailableMonths(y)] as const),
+    );
+    const monthsMap = Object.fromEntries(entries);
+    setMonthsByYear(monthsMap);
+    return monthsMap;
+  }, []);
+
   useEffect(() => {
-    async function loadDefaultMonth() {
+    async function init() {
+      const monthsMap = await refreshAvailableMonths();
+      const stored = readStoredMonth();
+      if (stored && monthsMap[stored.year]?.includes(MONTH_TO_NUMBER[stored.month])) {
+        setMonth(stored.month);
+        setYear(stored.year);
+        return;
+      }
       const current = await getCurrentActiveMonth();
       if (current) {
         setMonth(MONTH_NAMES[current.month - 1]);
@@ -215,20 +234,7 @@ export default function PresencasPage() {
       setMonth(MONTH_NAMES[now.getMonth()]);
       setYear(now.getFullYear());
     }
-    loadDefaultMonth();
-  }, []);
-
-  const refreshAvailableMonths = useCallback(async () => {
-    const years = await getAvailableYears();
-    setAvailableYears(years);
-    const entries = await Promise.all(
-      years.map(async (y) => [y, await getAvailableMonths(y)] as const),
-    );
-    setMonthsByYear(Object.fromEntries(entries));
-  }, []);
-
-  useEffect(() => {
-    refreshAvailableMonths();
+    init();
   }, [refreshAvailableMonths]);
 
   const loadSessionDates = useCallback(async () => {

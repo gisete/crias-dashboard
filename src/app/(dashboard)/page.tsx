@@ -14,7 +14,8 @@ import {
   type MonthStats,
   type StatusCounts,
 } from '@/lib/data/registrations';
-import { MONTH_NAMES } from '@/lib/months';
+import { MONTH_NAMES, MONTH_TO_NUMBER } from '@/lib/months';
+import { readStoredMonth } from '@/lib/month-storage';
 import { MonthSelector } from '@/components/inscricoes/MonthSelector';
 import { StatCards } from '@/components/inscricoes/StatCards';
 import { UnassignedRegistrations } from '@/components/inscricoes/UnassignedRegistrations';
@@ -47,8 +48,27 @@ export default function InscricoesPage() {
   const [unassigned, setUnassigned] = useState<RegistrationWithDetails[]>([]);
   const [unmatchedCount, setUnmatchedCount] = useState(0);
 
+  const refreshAvailableMonths = useCallback(async () => {
+    const years = await getAvailableYears();
+    setAvailableYears(years);
+    const entries = await Promise.all(
+      years.map(async (y) => [y, await getAvailableMonths(y)] as const),
+    );
+    const monthsMap = Object.fromEntries(entries);
+    setMonthsByYear(monthsMap);
+    return monthsMap;
+  }, []);
+
   useEffect(() => {
-    getLatestActiveMonth().then((result) => {
+    async function init() {
+      const monthsMap = await refreshAvailableMonths();
+      const stored = readStoredMonth();
+      if (stored && monthsMap[stored.year]?.includes(MONTH_TO_NUMBER[stored.month])) {
+        setMonth(stored.month);
+        setYear(stored.year);
+        return;
+      }
+      const result = await getLatestActiveMonth();
       if (result) {
         setMonth(MONTH_NAMES[result.month - 1]);
         setYear(result.year);
@@ -57,21 +77,9 @@ export default function InscricoesPage() {
         setMonth(MONTH_NAMES[now.getMonth()]);
         setYear(now.getFullYear());
       }
-    });
+    }
+    init();
     fetchUnassignedRegistrations().then(setUnassigned);
-  }, []);
-
-  const refreshAvailableMonths = useCallback(async () => {
-    const years = await getAvailableYears();
-    setAvailableYears(years);
-    const entries = await Promise.all(
-      years.map(async (y) => [y, await getAvailableMonths(y)] as const),
-    );
-    setMonthsByYear(Object.fromEntries(entries));
-  }, []);
-
-  useEffect(() => {
-    refreshAvailableMonths();
   }, [refreshAvailableMonths]);
 
   const refetch = useCallback(() => {
