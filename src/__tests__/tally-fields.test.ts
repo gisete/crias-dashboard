@@ -4,6 +4,7 @@ import {
   joinTallyArray,
   combinePlans,
   isExistingFamily,
+  extractNumChildrenSelected,
 } from '@/lib/tally-fields';
 
 describe('unwrapTallyValue', () => {
@@ -138,5 +139,35 @@ describe('isExistingFamily', () => {
 
   it('is case-insensitive', () => {
     expect(isExistingFamily(['SIM, somos família Crias'])).toBe(true);
+  });
+});
+
+describe('extractNumChildrenSelected', () => {
+  it('extracts number from array', () => {
+    expect(extractNumChildrenSelected(['2'])).toBe(2);
+  });
+
+  it('extracts number from string', () => {
+    expect(extractNumChildrenSelected('3')).toBe(3);
+  });
+
+  it('defaults to 1 for null', () => {
+    expect(extractNumChildrenSelected(null)).toBe(1);
+  });
+
+  it('defaults to 1 for undefined', () => {
+    expect(extractNumChildrenSelected(undefined)).toBe(1);
+  });
+
+  it('defaults to 1 for empty array', () => {
+    expect(extractNumChildrenSelected([])).toBe(1);
+  });
+
+  it('defaults to 1 for non-numeric string', () => {
+    expect(extractNumChildrenSelected(['abc'])).toBe(1);
+  });
+
+  it('defaults to 1 for zero', () => {
+    expect(extractNumChildrenSelected(['0'])).toBe(1);
   });
 });

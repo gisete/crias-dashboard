@@ -101,7 +101,7 @@ export async function PATCH(
       num_sessions: submission.num_sessions,
       has_photos: submission.has_photos,
       num_children: childNames.length || 1,
-      total_price: submission.unit_price,
+      total_price: submission.unit_price * (childNames.length || 1),
       selected_dates: submission.selected_dates,
       image_consent: submission.image_consent,
       nif: submission.nif,

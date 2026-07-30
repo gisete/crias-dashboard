@@ -127,6 +127,14 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     onUpdate(reg.id, updates);
   }
 
+  async function handleNumChildrenSave(_fieldName: string, value: string) {
+    const newNumChildren = Number(value);
+    const newTotalPrice = reg.unit_price * newNumChildren;
+    const updates = { num_children: newNumChildren, total_price: newTotalPrice };
+    await updateRegistration(reg.id, updates);
+    onUpdate(reg.id, updates);
+  }
+
   async function handleDatesSave(_fieldName: string, value: string) {
     const dates = value.split(',').map((s) => s.trim()).filter(Boolean);
     if (reg.status === 'pago_confirmado') {
@@ -309,6 +317,17 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                     {formatPlanBreakdown(reg.unit_price, reg.num_sessions)}
                   </span>
                 </div>
+
+                <InlineEditField
+                  label="Nº de crianças"
+                  value={String(reg.num_children)}
+                  fieldName="num_children"
+                  type="number"
+                  min={1}
+                  max={3}
+                  step={1}
+                  onSave={handleNumChildrenSave}
+                />
 
                 <div>
                   <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">Sessões agendadas</span>

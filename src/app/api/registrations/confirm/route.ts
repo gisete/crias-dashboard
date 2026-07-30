@@ -17,6 +17,7 @@ interface ConfirmPayload {
   telefone: string | null;
   criancas_nomes: string | null;
   criancas_nascimentos: string | null;
+  criancas_inscritas: number | null;
   plano: string | null;
   datas_selecionadas: string | null;
   consentimento: string | null;
@@ -200,6 +201,8 @@ export async function POST(request: NextRequest) {
       name,
       dob: dobs[i] ? parseDateOfBirth(dobs[i]) : null,
     }));
+    const numChildren = body.criancas_inscritas ?? children.length ?? 1;
+    const unitPrice = parsed?.unitPrice ?? 0;
 
     const { data: registration, error: regError } = await supabase
       .from('registrations')
@@ -212,10 +215,10 @@ export async function POST(request: NextRequest) {
         tally_submission_id: body.tally_submission_id ?? null,
         submitted_at: body.submitted_at ?? null,
         plan: body.plano ?? '',
-        unit_price: parsed?.unitPrice ?? 0,
+        unit_price: unitPrice,
         num_sessions: parsed?.numSessions ?? 0,
-        num_children: children.length || 1,
-        total_price: parsed?.unitPrice ?? 0,
+        num_children: numChildren,
+        total_price: unitPrice * numChildren,
         has_photos: parsed?.hasPhotos ?? false,
         selected_dates: selectedDates,
         image_consent: body.consentimento ?? null,

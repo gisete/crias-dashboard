@@ -7,8 +7,11 @@ interface Props {
   label?: string;
   value: string | null;
   fieldName: string;
-  type?: 'text' | 'select' | 'textarea' | 'date';
+  type?: 'text' | 'select' | 'textarea' | 'date' | 'number';
   options?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
   onSave: (fieldName: string, value: string) => Promise<void>;
   /** Custom rendering for the display-mode value (e.g. a derived age line). */
   displayValue?: ReactNode;
@@ -22,6 +25,9 @@ export function InlineEditField({
   fieldName,
   type = 'text',
   options,
+  min,
+  max,
+  step,
   onSave,
   displayValue,
   valueClassName = 'text-body-md text-gray-900',
@@ -77,6 +83,17 @@ export function InlineEditField({
           ) : type === 'date' ? (
             <input
               type="date"
+              className="flex-1 text-body-md border border-surface-container-highest rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              autoFocus
+            />
+          ) : type === 'number' ? (
+            <input
+              type="number"
+              min={min}
+              max={max}
+              step={step}
               className="flex-1 text-body-md border border-surface-container-highest rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}

@@ -9,6 +9,7 @@ export type TallyFormConfig = {
     is_existing_family: string;
     criancas_nomes: string[];
     criancas_nascimentos: string[];
+    criancas_inscritas: string;
     plano_individual: string;
     plano_pack: string;
     datas_selecionadas: string;
@@ -29,6 +30,7 @@ const FORM_A: TallyFormConfig = {
     is_existing_family: 'question_MLb090',
     criancas_nomes: ['question_4kKO8r', 'question_2kKoee', 'question_ZV2eNV'],
     criancas_nascimentos: ['question_pAVbJZ', 'question_1KEANO', 'question_MO5e6g'],
+    criancas_inscritas: 'question_ZlddOy',
     plano_individual: 'question_Qr74DY',
     plano_pack: 'question_eAaz6x',
     datas_selecionadas: 'question_Wo8qNe',
@@ -49,6 +51,7 @@ const FORM_B: TallyFormConfig = {
     is_existing_family: 'question_XYB0Kd',
     criancas_nomes: ['question_e2xRdE', 'question_WYpzvP', 'question_aErd8E'],
     criancas_nascimentos: ['question_1v2V1O', 'question_MYdR9g', 'question_JDkzNY'],
+    criancas_inscritas: 'question_88px0Y',
     plano_individual: 'question_6vQNXO',
     plano_pack: 'question_7v9x89',
     datas_selecionadas: 'question_br4d02',

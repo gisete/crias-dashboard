@@ -55,6 +55,18 @@ export function combinePlans(individual: unknown, pack: unknown): string | null 
 }
 
 /**
+ * Extract the number of children selected in the Tally form dropdown.
+ * Tally returns this as ["1"], ["2"], or ["3"].
+ * Returns the parsed integer, defaulting to 1 if missing or unparseable.
+ */
+export function extractNumChildrenSelected(value: unknown): number {
+  const str = unwrapTallyValue(value);
+  if (str === null) return 1;
+  const parsed = parseInt(str, 10);
+  return isNaN(parsed) || parsed < 1 ? 1 : parsed;
+}
+
+/**
  * Determine if submission is from an existing family.
  *
  * Convention: Tally answer options must start with "Sim" or "Não".

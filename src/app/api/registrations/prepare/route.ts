@@ -6,6 +6,7 @@ import {
   joinTallyArray,
   combinePlans,
   isExistingFamily,
+  extractNumChildrenSelected,
 } from '@/lib/tally-fields';
 
 interface TallyPreparePayload {
@@ -57,6 +58,9 @@ export async function POST(request: NextRequest) {
       telefone: unwrapTallyValue(fieldsById[formConfig.fields.responsavel_telefone]),
       criancas_nomes: collectTallyFields(fieldsById, formConfig.fields.criancas_nomes),
       criancas_nascimentos: collectTallyFields(fieldsById, formConfig.fields.criancas_nascimentos),
+      criancas_inscritas: extractNumChildrenSelected(
+        fieldsById[formConfig.fields.criancas_inscritas]
+      ),
       plano: combinePlans(
         fieldsById[formConfig.fields.plano_individual],
         fieldsById[formConfig.fields.plano_pack]
