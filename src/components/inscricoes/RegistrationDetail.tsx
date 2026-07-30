@@ -329,6 +329,8 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                   onSave={handleNumChildrenSave}
                 />
 
+                <Field label="Total a pagar" value={`${reg.total_price}€`} />
+
                 <div>
                   <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">Sessões agendadas</span>
                   {editingDates ? (
