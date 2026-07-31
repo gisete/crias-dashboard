@@ -197,7 +197,12 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     <>
       <tr className="bg-[#fbfbfb] border-b border-surface-container-highest">
         <td colSpan={11} className="p-0">
-          <div className="p-10">
+          <div className="p-10 relative">
+            {/* Sits in the panel's padding whitespace so it clears the
+                NIF field at the top of column 3. */}
+            <div className="absolute top-6 right-6 z-10">
+              <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
+            </div>
             {reg.webhook_error && reg.webhook_error_message && (
               <WebhookErrorBanner
                 message={reg.webhook_error_message}
@@ -417,9 +422,6 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
             <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
               <DeleteRegistrationButton registrationId={reg.id} childNames={childNamesStr} />
               <div className="flex items-center gap-4">
-                {reg.status !== 'a_pagar' && reg.status !== 'lembrete' && (
-                  <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
-                )}
                 <StatusActions
                   status={reg.status}
                   onAction={handleStatusChange}

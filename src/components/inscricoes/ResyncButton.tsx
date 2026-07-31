@@ -56,18 +56,19 @@ export function ResyncButton({ registrationId, family, onUpdate }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col items-end gap-1.5">
       <button
         onClick={() => { setError(null); setShowModal(true); }}
         disabled={syncing}
-        className="flex items-center gap-1.5 text-label-md text-gray-600 border border-surface-container-highest rounded-lg px-4 py-2 hover:bg-surface-container-low transition-colors disabled:opacity-50"
+        title="Re-sincronizar"
+        aria-label="Re-sincronizar"
+        className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <ArrowsClockwise size={14} className={syncing ? 'animate-spin' : ''} />
-        {syncing ? 'A sincronizar...' : 'Re-sincronizar'}
+        <ArrowsClockwise size={18} className={syncing ? 'animate-spin' : ''} />
       </button>
-      {error && <p className="text-label-sm text-red-500">{error}</p>}
+      {error && <p className="text-label-sm text-red-500 whitespace-nowrap">{error}</p>}
       {success && (
-        <p className="flex items-center gap-1.5 text-label-sm text-status-pago-text">
+        <p className="flex items-center gap-1.5 text-label-sm text-status-pago-text whitespace-nowrap">
           <Check size={12} weight="bold" />
           Dados atualizados
         </p>
