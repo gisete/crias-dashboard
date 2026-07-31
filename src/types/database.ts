@@ -29,6 +29,7 @@ export interface Registration {
   notes: string | null;
   nif: string | null;
   invoice_requested: boolean;
+  fatura_enviada: boolean;
   webhook_error: boolean;
   webhook_error_message: string | null;
   brevo_flag: string | null;

@@ -1,0 +1,2 @@
+ALTER TABLE registrations
+  ADD COLUMN fatura_enviada BOOLEAN NOT NULL DEFAULT FALSE;

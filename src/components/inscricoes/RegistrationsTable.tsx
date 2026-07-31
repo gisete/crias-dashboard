@@ -16,9 +16,12 @@ interface Props {
   onToggle: (id: string) => void;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onStatusChange: (id: string, newStatus: RegistrationStatus) => void;
+  onToggleFaturaEnviada: (id: string) => void;
 }
 
 const TH = 'py-3 md:py-5 px-3 md:px-6 text-label-sm text-gray-500 uppercase tracking-wider font-medium';
+const TH_NARROW = 'py-3 md:py-5 px-1 md:px-2 text-label-sm text-gray-500 uppercase tracking-wider font-medium text-center';
+const TH_ENVIADA = `${TH_NARROW} bg-[#EBF0ED]`;
 
 function childSortKey(reg: RegistrationWithDetails): string {
   return reg.children[0]?.name ?? '';
@@ -36,6 +39,7 @@ export function RegistrationsTable({
   onToggle,
   onUpdate,
   onStatusChange,
+  onToggleFaturaEnviada,
 }: Props) {
   const [sortDir, setSortDir] = useState<SortDir>('default');
   const [orderDir, setOrderDir] = useState<OrderDir>('desc');
@@ -111,12 +115,13 @@ export function RegistrationsTable({
                 </span>
               </th>
               <th className={`${TH} w-[8%]`}>Idade</th>
-              <th className={`${TH} w-[15%]`}>Responsável</th>
-              <th className={`${TH} w-[17%]`}>Plano</th>
-              <th className={`${TH} w-[8%]`}>Valor</th>
-              <th className={`${TH} w-[5%]`}>F</th>
-              <th className={`${TH} w-[5%]`}>V</th>
-              <th className={`${TH} w-[8%]`} />
+              <th className={`${TH} w-[16%]`}>Responsável</th>
+              <th className={`${TH} w-[15%]`}>Plano</th>
+              <th className={`${TH} w-[6%]`}>Valor</th>
+              <th className={`${TH} w-[7%] text-center`}>F</th>
+              <th className={`${TH_ENVIADA} w-[6%] border-x border-surface-container-highest`}>Env</th>
+              <th className={`${TH_NARROW} w-[4%]`}>V</th>
+              <th className={`${TH} w-[4%]`} />
             </tr>
           </thead>
           <tbody className="text-body-md text-gray-900">
@@ -127,6 +132,7 @@ export function RegistrationsTable({
                   order={orderMap.get(reg.id) ?? 0}
                   isExpanded={expandedId === reg.id}
                   onToggle={() => onToggle(reg.id)}
+                  onToggleFaturaEnviada={() => onToggleFaturaEnviada(reg.id)}
                 />
                 {expandedId === reg.id && (
                   <RegistrationDetail

@@ -196,7 +196,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   return (
     <>
       <tr className="bg-[#fbfbfb] border-b border-surface-container-highest">
-        <td colSpan={10} className="p-0">
+        <td colSpan={11} className="p-0">
           <div className="p-10">
             {reg.webhook_error && reg.webhook_error_message && (
               <WebhookErrorBanner

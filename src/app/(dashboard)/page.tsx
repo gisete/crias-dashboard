@@ -11,6 +11,7 @@ import {
   getAvailableMonths,
   getAvailableYears,
   getLatestActiveMonth,
+  toggleFaturaEnviada,
   type MonthStats,
   type StatusCounts,
 } from '@/lib/data/registrations';
@@ -117,6 +118,21 @@ export default function InscricoesPage() {
     }
   }
 
+  async function handleToggleFaturaEnviada(id: string) {
+    const current = registrations.find((r) => r.id === id);
+    if (!current) return;
+    const prevValue = current.fatura_enviada;
+    setRegistrations((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, fatura_enviada: !prevValue } : r)),
+    );
+    const result = await toggleFaturaEnviada(id);
+    if (!result.success) {
+      setRegistrations((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, fatura_enviada: prevValue } : r)),
+      );
+    }
+  }
+
   function handleMonthChange(m: string, y: number) {
     setMonth(m);
     setYear(y);
@@ -167,6 +183,7 @@ export default function InscricoesPage() {
         onToggle={handleToggle}
         onUpdate={handleUpdate}
         onStatusChange={handleStatusChange}
+        onToggleFaturaEnviada={handleToggleFaturaEnviada}
       />
     </>
   );

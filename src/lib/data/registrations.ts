@@ -295,6 +295,15 @@ export async function updateRegistrationStatus(
   return { success: res.ok };
 }
 
+export async function toggleFaturaEnviada(
+  id: string
+): Promise<{ success: boolean; fatura_enviada?: boolean }> {
+  const res = await fetch(`/api/registrations/${id}/fatura-enviada`, { method: 'PATCH' });
+  if (!res.ok) return { success: false };
+  const data = await res.json();
+  return { success: true, fatura_enviada: data.fatura_enviada };
+}
+
 export async function updateRegistrationDates(
   id: string,
   dates: string[]

@@ -7,8 +7,8 @@ import { firstName, shortName } from '@/lib/name-utils';
 
 function CheckBadge() {
   return (
-    <div className="w-7 h-7 rounded-full bg-check-bg flex items-center justify-center">
-      <Check size={14} weight="bold" className="text-check-icon" />
+    <div className="w-5 h-5 rounded-full bg-check-bg flex items-center justify-center">
+      <Check size={11} weight="bold" className="text-check-icon translate-x-px -translate-y-px" />
     </div>
   );
 }
@@ -18,9 +18,16 @@ interface Props {
   order: number;
   isExpanded: boolean;
   onToggle: () => void;
+  onToggleFaturaEnviada: () => void;
 }
 
-export function RegistrationRow({ registration: reg, order, isExpanded, onToggle }: Props) {
+export function RegistrationRow({
+  registration: reg,
+  order,
+  isExpanded,
+  onToggle,
+  onToggleFaturaEnviada,
+}: Props) {
   const { family, children } = reg;
 
   const childrenLabel = children.map((c) => firstName(c.name)).join(' + ');
@@ -66,12 +73,50 @@ export function RegistrationRow({ registration: reg, order, isExpanded, onToggle
 
       {/* 7. Fatura */}
       <td className="py-3 md:py-6 px-3 md:px-6">
-        {reg.nif ? <CheckBadge /> : null}
+        {reg.nif ? (
+          <div className="flex justify-center">
+            <CheckBadge />
+          </div>
+        ) : null}
+      </td>
+
+      {/* 7b. Fatura enviada */}
+      <td className="py-2 md:py-4 px-1 md:px-2 bg-[#F8FDFA] border-x border-surface-container-highest">
+        {reg.nif ? (
+          <div className="flex justify-center">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFaturaEnviada();
+              }}
+              className={`group w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors touch-manipulation ${
+                reg.fatura_enviada
+                  ? 'border-emerald-600 bg-emerald-600'
+                  : 'border-gray-300 bg-transparent hover:border-emerald-600 hover:bg-emerald-50'
+              }`}
+              aria-label={reg.fatura_enviada ? 'Marcar fatura como não enviada' : 'Marcar fatura como enviada'}
+            >
+              <Check
+                size={11}
+                weight="bold"
+                className={`translate-x-px -translate-y-px ${
+                  reg.fatura_enviada
+                    ? 'text-white'
+                    : 'text-transparent group-hover:text-emerald-300'
+                }`}
+              />
+            </button>
+          </div>
+        ) : null}
       </td>
 
       {/* 8. Voucher */}
-      <td className="py-3 md:py-6 px-3 md:px-6">
-        {reg.voucher_code ? <CheckBadge /> : null}
+      <td className="py-3 md:py-6 px-1 md:px-2">
+        {reg.voucher_code ? (
+          <div className="flex justify-center">
+            <CheckBadge />
+          </div>
+        ) : null}
       </td>
 
       {/* 9. Expand/collapse chevron */}

@@ -29,7 +29,7 @@ export function SessionTable({ children, onTogglePhotosReady }: SessionTableProp
             <th className={TH}>Responsável</th>
             <th className={TH_CENTER}>Consentimento</th>
             <th className={TH_FOTO}>Foto</th>
-            <th className={TH_FOTO}>Prontas</th>
+            <th className={TH_FOTO}>Enviadas</th>
             <th className={TH}>Valor</th>
           </tr>
         </thead>
