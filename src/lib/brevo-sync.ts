@@ -70,9 +70,14 @@ export async function callBrevoLookup(email: string): Promise<MakeResyncResponse
   let payload: MakeResyncResponse;
   try {
     // Read as text and unwrap Brevo's {"value":"..."} fragments before
-    // parsing — left as-is they make the whole body invalid JSON.
+    // parsing — left as-is they make the whole body invalid JSON. Also
+    // strip trailing commas, since Make's manually constructed JSON often
+    // includes them before a closing } or ].
     const rawBody = await makeResponse.text();
-    payload = JSON.parse(rawBody.replace(WRAPPED_VALUE, '$1'));
+    const sanitized = rawBody
+      .replace(WRAPPED_VALUE, '$1')
+      .replace(/,\s*([}\]])/g, '$1');
+    payload = JSON.parse(sanitized);
   } catch {
     throw new BrevoLookupError('Resposta inválida do serviço de sincronização.', 502);
   }
