@@ -201,7 +201,9 @@ export async function POST(request: NextRequest) {
       name,
       dob: dobs[i] ? parseDateOfBirth(dobs[i]) : null,
     }));
-    const numChildren = body.criancas_inscritas ?? children.length ?? 1;
+    // `||` not `??`: children.length is always a number, so `?? 1` would
+    // never fire and an empty name list would zero out total_price.
+    const numChildren = body.criancas_inscritas || children.length || 1;
     const unitPrice = parsed?.unitPrice ?? 0;
 
     const { data: registration, error: regError } = await supabase
