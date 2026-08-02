@@ -40,6 +40,7 @@ function formatDate(dateOfBirth: string | null): string {
 interface ExportChild {
   name: string;
   date_of_birth: string | null;
+  removed_at: string | null;
 }
 
 interface ExportFamily {
@@ -88,7 +89,7 @@ export async function GET(
 
   const { data: registrations, error: regsError } = await supabase
     .from('registrations')
-    .select('*, family:families(parent_name, email, phone), children(name, date_of_birth)')
+    .select('*, family:families(parent_name, email, phone), children(name, date_of_birth, removed_at)')
     .eq('month', monthName)
     .eq('year', monthRecord.year)
     .order('created_at', { ascending: true });
@@ -98,9 +99,12 @@ export async function GET(
   }
 
   const rows = (registrations as unknown as ExportRegistration[]).map((reg) => {
-    const childNames = reg.children.map((c) => c.name).join(' + ');
-    const childDobs = reg.children.map((c) => formatDate(c.date_of_birth)).join(' + ');
-    const childAges = reg.children
+    // Children dropped from the family's Brevo contact stay in the table for
+    // session history, but shouldn't appear on the month's export.
+    const children = (reg.children ?? []).filter((c) => !c.removed_at);
+    const childNames = children.map((c) => c.name).join(' + ');
+    const childDobs = children.map((c) => formatDate(c.date_of_birth)).join(' + ');
+    const childAges = children
       .map((c) => (c.date_of_birth ? calculateAge(c.date_of_birth) : ''))
       .join(' / ');
 

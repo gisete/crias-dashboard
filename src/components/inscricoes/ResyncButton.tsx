@@ -49,6 +49,9 @@ export function ResyncButton({ registrationId, family, onUpdate }: Props) {
     if (result.updated) {
       updates.num_children = result.updated.childrenCount;
     }
+    if (result.total_price !== undefined) {
+      updates.total_price = result.total_price;
+    }
     onUpdate(registrationId, updates);
 
     setSuccess(true);

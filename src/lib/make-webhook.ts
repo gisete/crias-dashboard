@@ -88,7 +88,8 @@ export function buildStatusWebhookPayload(
 
 interface FetchedRegistration extends WebhookRegistration {
   family: WebhookFamily | null;
-  children: WebhookChild[] | null;
+  /** removed_at is read to filter the roster; it never reaches the payload. */
+  children: (WebhookChild & { removed_at: string | null })[] | null;
 }
 
 /**
@@ -111,7 +112,7 @@ export async function sendStatusWebhook(
   const { data, error } = await supabase
     .from('registrations')
     .select(
-      'id, month, year, plan, unit_price, total_price, num_sessions, num_children, has_photos, selected_dates, nif, voucher_code, notes, family:families(parent_name, email, phone), children(name, date_of_birth)',
+      'id, month, year, plan, unit_price, total_price, num_sessions, num_children, has_photos, selected_dates, nif, voucher_code, notes, family:families(parent_name, email, phone), children(name, date_of_birth, removed_at)',
     )
     .eq('id', registrationId)
     .maybeSingle();
@@ -129,7 +130,8 @@ export async function sendStatusWebhook(
   const payload = buildStatusWebhookPayload(
     registration,
     registration.family,
-    registration.children ?? [],
+    // Children dropped from the Brevo contact must not appear in customer email.
+    (registration.children ?? []).filter((c) => !c.removed_at),
     newStatus,
   );
 

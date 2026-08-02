@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { parseDateOfBirth } from '@/lib/date-parser';
+import { removeChildrenFromUpcomingSessions, syncSessionEntries } from '@/lib/data/sessions-sync';
 import {
   callBrevoLookup,
   splitList,
   unwrapDob,
+  pairChildrenToNames,
   BrevoLookupError,
   type MakeResyncResponse,
 } from '@/lib/brevo-sync';
@@ -26,7 +28,9 @@ export async function POST(
 
   const { data: registration, error: regError } = await supabase
     .from('registrations')
-    .select('id, family:families(id, email, parent_name, phone)')
+    .select(
+      'id, status, selected_dates, unit_price, family:families(id, email, parent_name, phone)',
+    )
     .eq('id', id)
     .maybeSingle();
 
@@ -98,11 +102,15 @@ export async function POST(
     .from('children')
     .select('id, name, date_of_birth')
     .eq('registration_id', id)
+    .is('removed_at', null)
     .order('created_at', { ascending: true });
 
   const existing = existingChildren ?? [];
   let childrenCount = existing.length;
+  let totalPrice: number | undefined;
 
+  // An empty name list means Brevo returned nothing useful — leave the roster
+  // alone rather than emptying it on a lookup hiccup.
   if (newNames.length > 0) {
     if (newNames.length !== existing.length) {
       console.warn(
@@ -110,15 +118,23 @@ export async function POST(
       );
     }
 
+    const { pairs, removed } = pairChildrenToNames(existing, newNames);
+
     for (let i = 0; i < newNames.length; i++) {
       const name = newNames[i];
       const dob = newDobs[i] ?? null;
+      const target = pairs[i];
 
-      if (existing[i]) {
+      if (target) {
         await supabase
           .from('children')
-          .update({ name, date_of_birth: dob })
-          .eq('id', existing[i].id);
+          .update({
+            name,
+            // Only overwrite when Brevo actually supplied a parseable date,
+            // matching how parent_name/phone behave above.
+            date_of_birth: dob ?? target.date_of_birth,
+          })
+          .eq('id', target.id);
       } else {
         await supabase.from('children').insert({
           registration_id: id,
@@ -128,15 +144,40 @@ export async function POST(
       }
     }
 
-    childrenCount = newNames.length;
+    // Whatever Brevo no longer lists. Soft-removed rather than deleted: a real
+    // delete cascades through session_children and would erase past attendance.
+    // Skipping this is what left a stale row holding a surviving child's name —
+    // the duplicate-name bug.
+    const removedIds = removed.map((c) => c.id as string);
+    if (removedIds.length > 0) {
+      await supabase
+        .from('children')
+        .update({ removed_at: new Date().toISOString() })
+        .in('id', removedIds);
 
-    await supabase.from('registrations').update({ num_children: childrenCount }).eq('id', id);
+      await removeChildrenFromUpcomingSessions(removedIds);
+    }
+
+    childrenCount = newNames.length;
+    totalPrice = (registration.unit_price as number) * childrenCount;
+
+    await supabase
+      .from('registrations')
+      .update({ num_children: childrenCount, total_price: totalPrice })
+      .eq('id', id);
+
+    // Newly added children have no session rows yet. Safe after the removal
+    // above, since session syncing now skips removed children.
+    if (registration.status === 'pago_confirmado') {
+      await syncSessionEntries(id, (registration.selected_dates as string[]) ?? []);
+    }
   }
 
   const { data: finalChildren } = await supabase
     .from('children')
-    .select('id, registration_id, name, date_of_birth, created_at')
+    .select('id, registration_id, name, date_of_birth, removed_at, created_at')
     .eq('registration_id', id)
+    .is('removed_at', null)
     .order('created_at', { ascending: true });
 
   return NextResponse.json({
@@ -148,5 +189,6 @@ export async function POST(
     },
     family: updatedFamily ?? null,
     children: finalChildren ?? [],
+    total_price: totalPrice,
   });
 }

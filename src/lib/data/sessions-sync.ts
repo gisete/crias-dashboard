@@ -1,4 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { MONTH_TO_NUMBER } from '@/lib/months';
+import { getTodayLisbon } from '@/lib/date-utils';
 
 type ServerClient = ReturnType<typeof createServerClient>;
 
@@ -110,7 +112,8 @@ export async function createSessionEntries(registrationId: string): Promise<void
   const { data: children } = await supabase
     .from('children')
     .select('id')
-    .eq('registration_id', registrationId);
+    .eq('registration_id', registrationId)
+    .is('removed_at', null);
 
   const childIds = (children ?? []).map((c) => c.id as string);
 
@@ -164,7 +167,8 @@ export async function syncSessionEntries(registrationId: string, newDates: strin
   const { data: children } = await supabase
     .from('children')
     .select('id')
-    .eq('registration_id', registrationId);
+    .eq('registration_id', registrationId)
+    .is('removed_at', null);
 
   const childIds = (children ?? []).map((c) => c.id as string);
 
@@ -205,4 +209,49 @@ export async function syncSessionEntries(registrationId: string, newDates: strin
   }
 
   await addSessionEntries(supabase, registrationId, reg.month, reg.year, toAdd, childIds);
+}
+
+/**
+ * When children are dropped from a family's Brevo contact: remove them from
+ * sessions that haven't happened yet, but leave past ones alone so historical
+ * session and attendance records still show the child.
+ */
+export async function removeChildrenFromUpcomingSessions(childIds: string[]): Promise<void> {
+  if (childIds.length === 0) return;
+
+  const supabase = createServerClient();
+
+  interface Row {
+    id: string;
+    session_id: string;
+    sessions: { date: string; month: string; year: number } | null;
+  }
+
+  const { data: rows } = await supabase
+    .from('session_children')
+    .select('id, session_id, sessions(date, month, year)')
+    .in('child_id', childIds);
+
+  const today = getTodayLisbon();
+
+  // sessions.date is a bare day-of-month ("5"), with month/year alongside it,
+  // so rebuild a comparable YYYY-MM-DD before checking against today.
+  const upcoming = ((rows ?? []) as unknown as Row[]).filter((row) => {
+    if (!row.sessions) return false;
+    const monthNumber = MONTH_TO_NUMBER[row.sessions.month];
+    if (!monthNumber) return false;
+    const day = parseInt(row.sessions.date, 10);
+    if (Number.isNaN(day)) return false;
+    const iso = `${row.sessions.year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return iso >= today;
+  });
+
+  if (upcoming.length === 0) return;
+
+  await supabase
+    .from('session_children')
+    .delete()
+    .in('id', upcoming.map((row) => row.id));
+
+  await removeOrphanedSessions(supabase, [...new Set(upcoming.map((row) => row.session_id))]);
 }

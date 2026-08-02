@@ -42,6 +42,9 @@ export interface Child {
   registration_id: string;
   name: string;
   date_of_birth: string | null;
+  /** Set when the child is dropped from the family's Brevo contact. Hidden
+   *  from the registration roster, but kept so past sessions still show them. */
+  removed_at: string | null;
   created_at: string;
 }
 

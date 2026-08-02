@@ -2,6 +2,20 @@ import { supabaseClient } from '@/lib/supabase/client';
 import type { RegistrationWithDetails, Child } from '@/types/database';
 import { getTodayLisbon } from '@/lib/date-utils';
 
+/**
+ * Children soft-removed from a family's Brevo contact stay in the table so
+ * past sessions still show them, but must not appear on the registration.
+ * Filtered here rather than in the query — an embedded PostgREST filter that
+ * silently fails to apply would let them reappear.
+ */
+function withActiveChildren(data: unknown): RegistrationWithDetails[] {
+  const rows = (data ?? []) as unknown as RegistrationWithDetails[];
+  return rows.map((reg) => ({
+    ...reg,
+    children: (reg.children ?? []).filter((c) => !c.removed_at),
+  }));
+}
+
 export async function fetchUnassignedRegistrations(): Promise<RegistrationWithDetails[]> {
   const { data, error } = await supabaseClient
     .from('registrations')
@@ -14,7 +28,7 @@ export async function fetchUnassignedRegistrations(): Promise<RegistrationWithDe
     return [];
   }
 
-  return (data ?? []) as unknown as RegistrationWithDetails[];
+  return withActiveChildren(data);
 }
 
 export async function assignRegistrationMonth(
@@ -40,6 +54,8 @@ export interface ResyncResult {
   };
   family?: { parent_name: string; phone: string | null };
   children?: Child[];
+  /** Recalculated when the child count changed; absent otherwise. */
+  total_price?: number;
 }
 
 export interface MonthStats {
@@ -81,7 +97,7 @@ export async function fetchRegistrations(
     return [];
   }
 
-  return (data ?? []) as unknown as RegistrationWithDetails[];
+  return withActiveChildren(data);
 }
 
 export async function fetchMonthStats(month: string, year: number): Promise<MonthStats> {

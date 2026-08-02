@@ -19,6 +19,42 @@ export function unwrapDob(raw: MakeResyncResponse['CHILD_DOB']): string | undefi
   return raw?.replace(WRAPPED_VALUE, '$1');
 }
 
+/**
+ * Decide which existing child row each name coming back from Brevo refers to.
+ *
+ * The name *is* the identity: rows are paired only on an exact (trimmed,
+ * case-insensitive) name match. An unmatched Brevo name is a new child, and an
+ * existing row nobody matched has left the family.
+ *
+ * Deliberately no positional fallback. Given [Ana, Beto] and Brevo returning
+ * [Ana, Carlos] there is no way to tell a rename from "Beto left, Carlos
+ * joined" — pairing by position would guess "rename" and hand Beto's session
+ * history to Carlos. Treating it as an add plus a removal fragments a genuinely
+ * renamed child's history, which is the far cheaper mistake: history stays
+ * attached to whoever actually attended.
+ *
+ * Returns `pairs` aligned index-for-index with `newNames` (undefined = insert a
+ * new row) and `removed`, the existing rows Brevo no longer lists.
+ */
+export function pairChildrenToNames<T extends { name: string }>(
+  existing: T[],
+  newNames: string[],
+): { pairs: (T | undefined)[]; removed: T[] } {
+  const unpaired = [...existing];
+  const pairs: (T | undefined)[] = new Array(newNames.length);
+
+  newNames.forEach((name, i) => {
+    const key = name.trim().toLowerCase();
+    const match = unpaired.findIndex((c) => c.name.trim().toLowerCase() === key);
+    if (match !== -1) {
+      pairs[i] = unpaired[match];
+      unpaired.splice(match, 1);
+    }
+  });
+
+  return { pairs, removed: unpaired };
+}
+
 export function splitList(value: string | undefined): string[] {
   return (value ?? '')
     .split(',')
