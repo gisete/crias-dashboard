@@ -80,6 +80,69 @@ async function addSessionEntries(
       .from('session_children')
       .upsert(rows, { onConflict: 'session_id,child_id', ignoreDuplicates: true });
   }
+
+  await assignSessionPhotos(supabase, registrationId);
+}
+
+/**
+ * Assign has_photos to a registration's session_children rows based on
+ * foto_sessions: the first N chronological session dates get the photo
+ * flag, the rest don't. Called after new session_children rows are added.
+ */
+export async function assignSessionPhotos(
+  supabase: ServerClient,
+  registrationId: string,
+): Promise<void> {
+  const { data: reg } = await supabase
+    .from('registrations')
+    .select('foto_sessions')
+    .eq('id', registrationId)
+    .maybeSingle();
+
+  const fotoSessions = reg?.foto_sessions ?? 0;
+
+  if (fotoSessions === 0) {
+    await supabase
+      .from('session_children')
+      .update({ has_photos: false })
+      .eq('registration_id', registrationId);
+    return;
+  }
+
+  interface Row {
+    id: string;
+    sessions: { date: string } | null;
+  }
+
+  const { data: rows } = await supabase
+    .from('session_children')
+    .select('id, sessions(date)')
+    .eq('registration_id', registrationId);
+
+  const typed = (rows ?? []) as unknown as Row[];
+
+  const uniqueDates = [
+    ...new Set(typed.filter((r) => r.sessions).map((r) => r.sessions!.date)),
+  ].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+  const photoDates = new Set(uniqueDates.slice(0, fotoSessions));
+
+  const trueIds: string[] = [];
+  const falseIds: string[] = [];
+  for (const row of typed) {
+    if (row.sessions && photoDates.has(row.sessions.date)) {
+      trueIds.push(row.id);
+    } else {
+      falseIds.push(row.id);
+    }
+  }
+
+  if (trueIds.length > 0) {
+    await supabase.from('session_children').update({ has_photos: true }).in('id', trueIds);
+  }
+  if (falseIds.length > 0) {
+    await supabase.from('session_children').update({ has_photos: false }).in('id', falseIds);
+  }
 }
 
 async function removeOrphanedSessions(supabase: ServerClient, sessionIds: string[]): Promise<void> {

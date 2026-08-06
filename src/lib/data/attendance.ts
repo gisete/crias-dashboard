@@ -85,7 +85,7 @@ export async function fetchAttendanceByDate(
   const { data: childrenData, error: childrenError } = await supabaseClient
     .from('session_children')
     .select(
-      'id, session_id, present, per_session_value, child:children(name, date_of_birth), registration:registrations(has_photos, plan, unit_price, total_price, num_sessions, image_consent, family:families(parent_name))',
+      'id, session_id, present, per_session_value, has_photos, child:children(name, date_of_birth), registration:registrations(has_photos, plan, unit_price, total_price, num_sessions, image_consent, family:families(parent_name))',
     )
     .in('session_id', sessionIds);
 
@@ -98,6 +98,7 @@ export async function fetchAttendanceByDate(
     session_id: string;
     present: boolean | null;
     per_session_value: number | null;
+    has_photos: boolean;
     child: { name: string; date_of_birth: string | null } | null;
     registration: {
       has_photos: boolean;
@@ -127,7 +128,7 @@ export async function fetchAttendanceByDate(
       dateOfBirth: row.child.date_of_birth,
       parentName: row.registration?.family?.parent_name ?? '',
       present: row.present,
-      hasPhotos: row.registration?.has_photos ?? false,
+      hasPhotos: row.has_photos,
       imageConsent: mapConsent(row.registration?.image_consent),
       perSessionValue,
       isPack: numSessions > 1,

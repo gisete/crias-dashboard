@@ -12,6 +12,9 @@ export interface SessionChild {
   perSessionValue: number;    // euros
   photosReady: boolean;
   registrationStatus: string; // 'pago_confirmado' | 'pendente' | 'a_pagar' | 'lembrete'
+  fotoSessions: number;
+  assignedPhotoCount: number;
+  registrationId: string;
 }
 
 export interface Session {

@@ -6,6 +6,16 @@ const PT_MONTHS = [
 ];
 
 let scCounter = 0;
+// Each recurring child belongs to a single registration across the mock
+// sessions, so a stable id is derived from their name the first time seen.
+const registrationIdByChild = new Map<string, string>();
+function registrationIdFor(childName: string): string {
+  if (!registrationIdByChild.has(childName)) {
+    registrationIdByChild.set(childName, `reg-mock-${String(registrationIdByChild.size + 1).padStart(3, '0')}`);
+  }
+  return registrationIdByChild.get(childName)!;
+}
+
 function sc(
   childName: string,
   birthDate: string,
@@ -27,6 +37,9 @@ function sc(
     perSessionValue,
     registrationStatus,
     photosReady,
+    fotoSessions: 0,
+    assignedPhotoCount: 0,
+    registrationId: registrationIdFor(childName),
   };
 }
 
@@ -250,6 +263,25 @@ const MOCK_SESSIONS: Session[] = [
     ],
   },
 ];
+
+// Derive fotoSessions/assignedPhotoCount per registration from how many
+// times that child appears with hasPhotoPlan across the mock sessions —
+// keeps the mock data internally consistent without hand-maintaining counts.
+const allMockChildren = MOCK_SESSIONS.flatMap((s) => s.children);
+const photoCountByRegistration = new Map<string, number>();
+for (const child of allMockChildren) {
+  if (child.hasPhotoPlan) {
+    photoCountByRegistration.set(
+      child.registrationId,
+      (photoCountByRegistration.get(child.registrationId) ?? 0) + 1,
+    );
+  }
+}
+for (const child of allMockChildren) {
+  const count = photoCountByRegistration.get(child.registrationId) ?? 0;
+  child.fotoSessions = count;
+  child.assignedPhotoCount = count;
+}
 
 export function getSessionsByMonth(month: string, year: number): Session[] {
   const monthIndex = PT_MONTHS.indexOf(month) + 1; // 1-12

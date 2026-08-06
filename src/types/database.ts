@@ -106,5 +106,6 @@ export interface SessionChild {
   marked_at: string | null;
   photos_ready: boolean;
   per_session_value: number | null;
+  has_photos: boolean;
   created_at: string;
 }
