@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRealtimeRegistrations } from '@/hooks/useRealtimeRegistrations';
 import type { RegistrationWithDetails, RegistrationStatus } from '@/types/database';
 import {
@@ -22,6 +22,7 @@ import { StatCards } from '@/components/inscricoes/StatCards';
 import { UnassignedRegistrations } from '@/components/inscricoes/UnassignedRegistrations';
 import { UnmatchedAlert } from '@/components/inscricoes/UnmatchedAlert';
 import { StatusFilter } from '@/components/inscricoes/StatusFilter';
+import { RegistrationSearch } from '@/components/inscricoes/RegistrationSearch';
 import { RegistrationsTable } from '@/components/inscricoes/RegistrationsTable';
 import { fetchUnmatchedCount } from '@/lib/data/unmatched-submissions';
 
@@ -40,6 +41,7 @@ export default function InscricoesPage() {
   const [year, setYear] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('todos');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [registrations, setRegistrations] = useState<RegistrationWithDetails[]>([]);
   const [stats, setStats] = useState<MonthStats>(EMPTY_STATS);
@@ -98,6 +100,16 @@ export default function InscricoesPage() {
 
   useRealtimeRegistrations(refetch);
 
+  const filteredRegistrations = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return registrations;
+    return registrations.filter((reg) =>
+      reg.family.parent_name.toLowerCase().includes(query) ||
+      reg.family.email.toLowerCase().includes(query) ||
+      reg.children.some((child) => child.name.toLowerCase().includes(query)),
+    );
+  }, [registrations, searchQuery]);
+
   function handleToggle(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
   }
@@ -137,6 +149,7 @@ export default function InscricoesPage() {
     setMonth(m);
     setYear(y);
     setExpandedId(null);
+    setSearchQuery('');
   }
 
   function handleFilterChange(f: FilterKey) {
@@ -177,8 +190,12 @@ export default function InscricoesPage() {
 
       <StatusFilter active={activeFilter} counts={counts} onChange={handleFilterChange} />
 
+      <div className="mb-6">
+        <RegistrationSearch value={searchQuery} onChange={setSearchQuery} />
+      </div>
+
       <RegistrationsTable
-        registrations={registrations}
+        registrations={filteredRegistrations}
         expandedId={expandedId}
         onToggle={handleToggle}
         onUpdate={handleUpdate}
