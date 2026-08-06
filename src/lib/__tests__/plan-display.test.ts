@@ -1,4 +1,4 @@
-import { shortenPlan, getInitials, formatSessionValue, getFirstLastName } from '../plan-display';
+import { shortenPlan, getInitials, formatSessionValue, getFirstLastName, formatPlanBreakdown } from '../plan-display';
 
 describe('shortenPlan', () => {
   it('returns "1 sessão" for a single session plan', () => {
@@ -15,6 +15,18 @@ describe('shortenPlan', () => {
 
   it('returns Pack Ns + foto for monthly pack with photos', () => {
     expect(shortenPlan('Pack mensal 8 sessões + 16 registos fotográficos (132€)')).toBe('Pack 8s + foto');
+  });
+
+  it('handles combined individual + pack plan', () => {
+    expect(shortenPlan('1 sessão (14€) + Pack mensal 4 sessões (50€)')).toBe('1s + Pack 4s');
+  });
+
+  it('handles combined plan where individual has photos', () => {
+    expect(shortenPlan('2 sessões + 6 registos fotográficos (40€) + Pack mensal 4 sessões (50€)')).toBe('2s foto + Pack 4s');
+  });
+
+  it('handles combined plan where pack has photos', () => {
+    expect(shortenPlan('1 sessão (14€) + Pack mensal 4 sessões + 8 registos fotográficos (66€)')).toBe('1s + Pack 4s foto');
   });
 });
 
@@ -65,5 +77,20 @@ describe('formatSessionValue', () => {
 
   it('formats zero as 0€', () => {
     expect(formatSessionValue(0)).toBe('0€');
+  });
+});
+
+describe('formatPlanBreakdown', () => {
+  it('formats a single session plan', () => {
+    expect(formatPlanBreakdown('1 sessão (14€)')).toBe('14€ · 1 sessão');
+  });
+
+  it('formats a pack plan with per-session value', () => {
+    expect(formatPlanBreakdown('Pack mensal 4 sessões (50€)')).toBe('50€ · 4 sessões · 12,50€/sessão');
+  });
+
+  it('formats a combined plan showing each part', () => {
+    expect(formatPlanBreakdown('1 sessão (14€) + Pack mensal 4 sessões (50€)'))
+      .toBe('14€ · 1 sessão + 50€ · 4 sessões · 12,50€/sessão');
   });
 });

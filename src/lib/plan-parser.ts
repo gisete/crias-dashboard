@@ -34,3 +34,52 @@ export function parsePlan(plan: string): {
 
   return { unitPrice, numSessions, hasPhotos };
 }
+
+export interface PlanPart {
+  unitPrice: number;
+  numSessions: number;
+  hasPhotos: boolean;
+  isPack: boolean;
+}
+
+export function parsePlanParts(plan: string): PlanPart[] {
+  // Reuse the same split regex from parsePlan to separate combined plans
+  const parts = plan.split(/(?<=\(\d+€\))\s*\+\s*/);
+  return parts.map((part) => {
+    const parsed = parsePlan(part.trim());
+    return {
+      ...parsed,
+      isPack: part.toLowerCase().includes('mensal'),
+    };
+  });
+}
+
+/**
+ * Compute a per-session value for each date slot, allocating dates to plan
+ * parts in order. For single plans every date gets the same value. For
+ * combined plans (e.g. "1 sessão (14€) + Pack mensal 4 sessões (50€)"),
+ * the first date gets 14€ and the next four get 12.50€.
+ */
+export function computePerSessionValues(plan: string, numDates: number): number[] {
+  const parts = parsePlanParts(plan);
+  const values: number[] = [];
+
+  for (const part of parts) {
+    const perSession = part.numSessions > 0 ? part.unitPrice / part.numSessions : 0;
+    const count = Math.min(part.numSessions, numDates - values.length);
+    for (let i = 0; i < count; i++) {
+      values.push(perSession);
+    }
+  }
+
+  // If more dates than plan sessions (edge case), fill with last part's rate
+  if (values.length < numDates && parts.length > 0) {
+    const last = parts[parts.length - 1];
+    const fallback = last.numSessions > 0 ? last.unitPrice / last.numSessions : 0;
+    while (values.length < numDates) {
+      values.push(fallback);
+    }
+  }
+
+  return values;
+}

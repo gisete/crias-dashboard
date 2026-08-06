@@ -332,6 +332,11 @@ export async function updateRegistrationDates(
   return { success: res.ok };
 }
 
+export async function recomputeSessionValues(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/registrations/${id}/recompute-session-values`, { method: 'POST' });
+  return { success: res.ok };
+}
+
 export async function resyncRegistration(id: string): Promise<ResyncResult> {
   const res = await fetch(`/api/registrations/${id}/resync`, { method: 'POST' });
   const data = await res.json();

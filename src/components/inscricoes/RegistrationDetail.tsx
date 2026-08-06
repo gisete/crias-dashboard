@@ -13,8 +13,10 @@ import {
   updateRegistrationDates,
   updateFamily,
   updateChild,
+  recomputeSessionValues,
 } from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
+import { formatPlanBreakdown } from '@/lib/plan-display';
 import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
 import { WebhookErrorBanner } from './WebhookErrorBanner';
@@ -45,18 +47,6 @@ function formatChildNames(children: Child[]): string {
   if (children.length === 0) return '';
   if (children.length === 1) return children[0].name;
   return `${children.slice(0, -1).map((c) => c.name).join(', ')} e ${children[children.length - 1].name}`;
-}
-
-function formatPlanBreakdown(unitPrice: number, numSessions: number): string {
-  const parts = [`${unitPrice}€`, numSessions === 1 ? '1 sessão' : `${numSessions} sessões`];
-  if (numSessions > 1) {
-    const perSession = (unitPrice / numSessions).toLocaleString('pt-PT', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-    parts.push(`${perSession}€/sessão`);
-  }
-  return parts.join(' · ');
 }
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -121,10 +111,14 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
       unit_price: parsed.unitPrice,
       num_sessions: parsed.numSessions,
       has_photos: parsed.hasPhotos,
+      foto_sessions: parsed.hasPhotos ? parsed.numSessions : 0,
       total_price: totalPrice,
     };
     await updateRegistration(reg.id, updates);
     onUpdate(reg.id, updates);
+    if (reg.status === 'pago_confirmado') {
+      await recomputeSessionValues(reg.id);
+    }
   }
 
   async function handleNumChildrenSave(_fieldName: string, value: string) {
@@ -133,6 +127,12 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     const updates = { num_children: newNumChildren, total_price: newTotalPrice };
     await updateRegistration(reg.id, updates);
     onUpdate(reg.id, updates);
+  }
+
+  async function handleFotoSessionsSave(_fieldName: string, value: string) {
+    const num = Number(value);
+    await updateRegistration(reg.id, { foto_sessions: num });
+    onUpdate(reg.id, { foto_sessions: num });
   }
 
   async function handleDatesSave(_fieldName: string, value: string) {
@@ -319,7 +319,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                     onSave={handlePlanSave}
                   />
                   <span className="block mt-1 text-label-md text-gray-500">
-                    {formatPlanBreakdown(reg.unit_price, reg.num_sessions)}
+                    {formatPlanBreakdown(reg.plan)}
                   </span>
                 </div>
 
@@ -332,6 +332,17 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                   max={3}
                   step={1}
                   onSave={handleNumChildrenSave}
+                />
+
+                <InlineEditField
+                  label="Sessões foto"
+                  value={String(reg.foto_sessions ?? (reg.has_photos ? reg.num_sessions : 0))}
+                  fieldName="foto_sessions"
+                  type="number"
+                  min={0}
+                  max={reg.num_sessions}
+                  step={1}
+                  onSave={handleFotoSessionsSave}
                 />
 
                 <Field label="Total a pagar" value={`${reg.total_price}€`} />

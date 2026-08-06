@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { MONTH_TO_NUMBER } from '@/lib/months';
 import { getTodayLisbon } from '@/lib/date-utils';
+import { computePerSessionValues } from '@/lib/plan-parser';
 
 type ServerClient = ReturnType<typeof createServerClient>;
 
@@ -35,12 +36,15 @@ async function addSessionEntries(
   year: number,
   dates: string[],
   childIds: string[],
+  plan: string,
 ): Promise<void> {
   const parsedDates = dates
     .map(parseDateString)
     .filter((p): p is { date: string; slot: 'manhã' | 'tarde' } => p !== null);
 
   if (parsedDates.length === 0 || childIds.length === 0) return;
+
+  const perSessionValues = computePerSessionValues(plan, parsedDates.length);
 
   const capacity = await getDefaultCapacity(supabase);
 
@@ -60,13 +64,14 @@ async function addSessionEntries(
     (sessions ?? []).map((s) => [`${s.date}|${s.slot}`, s.id as string]),
   );
 
-  const rows = parsedDates.flatMap((p) => {
+  const rows = parsedDates.flatMap((p, dateIndex) => {
     const sessionId = sessionIdByKey.get(`${p.date}|${p.slot}`);
     if (!sessionId) return [];
     return childIds.map((childId) => ({
       session_id: sessionId,
       child_id: childId,
       registration_id: registrationId,
+      per_session_value: perSessionValues[dateIndex] ?? 0,
     }));
   });
 
@@ -103,7 +108,7 @@ export async function createSessionEntries(registrationId: string): Promise<void
 
   const { data: reg } = await supabase
     .from('registrations')
-    .select('month, year, selected_dates')
+    .select('month, year, selected_dates, plan')
     .eq('id', registrationId)
     .maybeSingle();
 
@@ -124,6 +129,7 @@ export async function createSessionEntries(registrationId: string): Promise<void
     reg.year,
     (reg.selected_dates as string[]) ?? [],
     childIds,
+    reg.plan as string,
   );
 }
 
@@ -158,7 +164,7 @@ export async function syncSessionEntries(registrationId: string, newDates: strin
 
   const { data: reg } = await supabase
     .from('registrations')
-    .select('month, year')
+    .select('month, year, plan')
     .eq('id', registrationId)
     .maybeSingle();
 
@@ -208,7 +214,9 @@ export async function syncSessionEntries(registrationId: string, newDates: strin
     await removeOrphanedSessions(supabase, [...new Set(toRemove.map((row) => row.session_id))]);
   }
 
-  await addSessionEntries(supabase, registrationId, reg.month, reg.year, toAdd, childIds);
+  await addSessionEntries(supabase, registrationId, reg.month, reg.year, toAdd, childIds, reg.plan as string);
+
+  await recomputeSessionValues(registrationId);
 }
 
 /**
@@ -254,4 +262,72 @@ export async function removeChildrenFromUpcomingSessions(childIds: string[]): Pr
     .in('id', upcoming.map((row) => row.id));
 
   await removeOrphanedSessions(supabase, [...new Set(upcoming.map((row) => row.session_id))]);
+}
+
+/**
+ * Recalculate per_session_value for every session_child row belonging to
+ * a registration, using the plan's per-part pricing and the chronological
+ * date order. Called after date edits (syncSessionEntries) and can also be
+ * called after plan edits.
+ */
+export async function recomputeSessionValues(registrationId: string): Promise<void> {
+  const supabase = createServerClient();
+
+  const { data: reg } = await supabase
+    .from('registrations')
+    .select('plan')
+    .eq('id', registrationId)
+    .maybeSingle();
+
+  if (!reg) return;
+
+  interface Row {
+    id: string;
+    sessions: { date: string; slot: string } | null;
+  }
+
+  const { data: rows } = await supabase
+    .from('session_children')
+    .select('id, sessions(date, slot)')
+    .eq('registration_id', registrationId);
+
+  const typed = (rows ?? []) as unknown as Row[];
+  const withSession = typed.filter((r) => r.sessions);
+  if (withSession.length === 0) return;
+
+  // Build ordered unique date keys
+  const uniqueKeys = [
+    ...new Set(
+      withSession
+        .slice()
+        .sort((a, b) => {
+          const da = parseInt(a.sessions!.date, 10);
+          const db = parseInt(b.sessions!.date, 10);
+          if (da !== db) return da - db;
+          return a.sessions!.slot === 'manhã' ? -1 : 1;
+        })
+        .map((r) => `${r.sessions!.date}|${r.sessions!.slot}`),
+    ),
+  ];
+
+  const values = computePerSessionValues(reg.plan, uniqueKeys.length);
+  const valueByKey = new Map<string, number>();
+  uniqueKeys.forEach((key, i) => valueByKey.set(key, values[i]));
+
+  // Batch update: group rows by their target value to minimize queries
+  const idsByValue = new Map<number, string[]>();
+  for (const row of withSession) {
+    const key = `${row.sessions!.date}|${row.sessions!.slot}`;
+    const val = valueByKey.get(key) ?? 0;
+    const ids = idsByValue.get(val) ?? [];
+    ids.push(row.id);
+    idsByValue.set(val, ids);
+  }
+
+  for (const [val, ids] of idsByValue.entries()) {
+    await supabase
+      .from('session_children')
+      .update({ per_session_value: val })
+      .in('id', ids);
+  }
 }

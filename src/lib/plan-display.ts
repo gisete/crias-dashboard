@@ -1,21 +1,25 @@
+import { parsePlanParts } from '@/lib/plan-parser';
+
 export function shortenPlan(plan: string): string {
-  const lower = plan.toLowerCase();
-  const hasPhotos = lower.includes('registos fotográficos');
-  const isMensal = lower.includes('mensal');
+  const parts = parsePlanParts(plan);
 
-  const sessaoMatch = plan.match(/(\d+)\s+sess[ãõ]/i);
-  const mensalMatch = plan.match(/mensal\s+(\d+)/i);
-  const numSessions = mensalMatch
-    ? parseInt(mensalMatch[1], 10)
-    : sessaoMatch
-    ? parseInt(sessaoMatch[1], 10)
-    : 1;
-
-  if (isMensal) {
-    return hasPhotos ? `Pack ${numSessions}s + foto` : `Pack ${numSessions}s`;
+  if (parts.length === 1) {
+    // Single plan — preserve existing output format exactly
+    const p = parts[0];
+    if (p.isPack) {
+      return p.hasPhotos ? `Pack ${p.numSessions}s + foto` : `Pack ${p.numSessions}s`;
+    }
+    if (p.numSessions === 1) return '1 sessão';
+    return p.hasPhotos ? `${p.numSessions}s + foto` : `${p.numSessions} sessões`;
   }
-  if (numSessions === 1) return '1 sessão';
-  return hasPhotos ? `${numSessions}s + foto` : `${numSessions} sessões`;
+
+  // Combined plan — shorter labels joined with " + "
+  return parts
+    .map((p) => {
+      const base = p.isPack ? `Pack ${p.numSessions}s` : `${p.numSessions}s`;
+      return p.hasPhotos ? `${base} foto` : base;
+    })
+    .join(' + ');
 }
 
 export function getInitials(name: string): string {
@@ -32,6 +36,27 @@ export function getFirstLastName(name: string): string {
 
 export function formatSessionValue(v: number): string {
   return Number.isInteger(v) ? `${v}€` : `${v.toFixed(2)}€`;
+}
+
+export function formatPlanBreakdown(plan: string): string {
+  const parts = parsePlanParts(plan);
+
+  return parts
+    .map((p) => {
+      const segments = [
+        `${p.unitPrice}€`,
+        p.numSessions === 1 ? '1 sessão' : `${p.numSessions} sessões`,
+      ];
+      if (p.numSessions > 1) {
+        const perSession = (p.unitPrice / p.numSessions).toLocaleString('pt-PT', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        segments.push(`${perSession}€/sessão`);
+      }
+      return segments.join(' · ');
+    })
+    .join(' + ');
 }
 
 export function getPlanOptions(): string[] {

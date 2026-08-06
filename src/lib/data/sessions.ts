@@ -17,9 +17,11 @@ interface SessionChildRow {
   id: string;
   session_id: string;
   photos_ready: boolean;
+  per_session_value: number | null;
   child: { name: string; date_of_birth: string | null } | null;
   registration: {
     plan: string;
+    unit_price: number;
     total_price: number;
     num_sessions: number;
     image_consent: string | null;
@@ -48,7 +50,7 @@ export async function fetchSessionsByMonth(month: string, year: number): Promise
   const { data: childrenData, error: childrenError } = await supabaseClient
     .from('session_children')
     .select(
-      'id, session_id, photos_ready, child:children(name, date_of_birth), registration:registrations(plan, total_price, num_sessions, image_consent, status, family:families(parent_name))',
+      'id, session_id, photos_ready, per_session_value, child:children(name, date_of_birth), registration:registrations(plan, unit_price, total_price, num_sessions, image_consent, status, family:families(parent_name))',
     )
     .in('session_id', sessionIds);
 
@@ -65,10 +67,10 @@ export async function fetchSessionsByMonth(month: string, year: number): Promise
 
     const { hasPhotos } = parsePlan(row.registration.plan);
     const consent = mapConsent(row.registration.image_consent);
-    const perSessionValue =
-      row.registration.num_sessions > 0
-        ? row.registration.total_price / row.registration.num_sessions
-        : 0;
+    const perSessionValue = row.per_session_value ??
+      (row.registration.num_sessions > 0
+        ? row.registration.unit_price / row.registration.num_sessions
+        : 0);
 
     const sessionChild: SessionChild = {
       sessionChildId: row.id,
