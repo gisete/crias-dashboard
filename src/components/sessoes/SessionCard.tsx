@@ -19,9 +19,10 @@ interface Props {
   displayChildren: SessionChild[];
   isToday?: boolean;
   onTogglePhotosReady: (sessionChildId: string, ready: boolean) => void;
+  onToggleSessionPhotos: (sessionChildIds: string[], hasPhotos: boolean) => void;
 }
 
-export function SessionCard({ session, displayChildren, isToday, onTogglePhotosReady }: Props) {
+export function SessionCard({ session, displayChildren, isToday, onTogglePhotosReady, onToggleSessionPhotos }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const confirmedCount = session.children.filter(
@@ -63,7 +64,11 @@ export function SessionCard({ session, displayChildren, isToday, onTogglePhotosR
 
       {isOpen && (
         <div className="border-t border-surface-container-highest">
-          <SessionTable children={displayChildren} onTogglePhotosReady={onTogglePhotosReady} />
+          <SessionTable
+            children={displayChildren}
+            onTogglePhotosReady={onTogglePhotosReady}
+            onToggleSessionPhotos={onToggleSessionPhotos}
+          />
         </div>
       )}
     </div>

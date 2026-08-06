@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRealtimeRegistrations } from "@/hooks/useRealtimeRegistrations";
 import type { Session, SessionChild } from "@/types/sessions";
-import { fetchSessionsByMonth, setPhotosReady } from "@/lib/data/sessions";
+import { fetchSessionsByMonth, setPhotosReady, setSessionPhotos } from "@/lib/data/sessions";
 import {
 	getAvailableMonths,
 	getAvailableYears,
@@ -133,6 +133,53 @@ export default function SessoesPage() {
 		}
 	}
 
+	async function handleToggleSessionPhotos(sessionChildIds: string[], hasPhotos: boolean) {
+		const prevSessions = sessions;
+		const idSet = new Set(sessionChildIds);
+
+		let registrationId: string | null = null;
+		for (const s of sessions) {
+			const found = s.children.find((c) => idSet.has(c.sessionChildId));
+			if (found) {
+				registrationId = found.registrationId;
+				break;
+			}
+		}
+
+		const flipped = sessions.map((s) => ({
+			...s,
+			children: s.children.map((c) =>
+				idSet.has(c.sessionChildId) ? { ...c, hasPhotoPlan: hasPhotos } : c,
+			),
+		}));
+
+		let nextSessions = flipped;
+		if (registrationId) {
+			const photoSessionIds = new Set<string>();
+			for (const s of flipped) {
+				const hasPhotoChild = s.children.some(
+					(c) => c.registrationId === registrationId && c.hasPhotoPlan,
+				);
+				if (hasPhotoChild) photoSessionIds.add(s.id);
+			}
+			const count = photoSessionIds.size;
+			nextSessions = flipped.map((s) => ({
+				...s,
+				children: s.children.map((c) =>
+					c.registrationId === registrationId ? { ...c, assignedPhotoCount: count } : c,
+				),
+			}));
+		}
+
+		setSessions(nextSessions);
+
+		const results = await Promise.all(sessionChildIds.map((id) => setSessionPhotos(id, hasPhotos)));
+		if (results.some((r) => !r.success)) {
+			console.error("handleToggleSessionPhotos: failed to persist photo flag");
+			setSessions(prevSessions);
+		}
+	}
+
 	const today = getTodayLisbon();
 
 	const upcomingSessions = useMemo(() => visibleSessions.filter((s) => s.date >= today), [visibleSessions, today]);
@@ -207,6 +254,7 @@ export default function SessoesPage() {
 									displayChildren={getDisplayChildren(session)}
 									isToday={session.date === today}
 									onTogglePhotosReady={handleTogglePhotosReady}
+									onToggleSessionPhotos={handleToggleSessionPhotos}
 								/>
 							))
 						) : pastSessions.length > 0 ? (
@@ -223,6 +271,7 @@ export default function SessoesPage() {
 								session={session}
 								displayChildren={getDisplayChildren(session)}
 								onTogglePhotosReady={handleTogglePhotosReady}
+								onToggleSessionPhotos={handleToggleSessionPhotos}
 							/>
 							))}
 						</div>

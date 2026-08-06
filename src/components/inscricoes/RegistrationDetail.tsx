@@ -17,6 +17,7 @@ import {
 } from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
 import { formatPlanBreakdown } from '@/lib/plan-display';
+import { reassignSessionPhotos } from '@/lib/data/sessions';
 import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
 import { WebhookErrorBanner } from './WebhookErrorBanner';
@@ -133,6 +134,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     const num = Number(value);
     await updateRegistration(reg.id, { foto_sessions: num });
     onUpdate(reg.id, { foto_sessions: num });
+    await reassignSessionPhotos(reg.id, num);
   }
 
   async function handleDatesSave(_fieldName: string, value: string) {

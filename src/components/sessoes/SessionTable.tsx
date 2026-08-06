@@ -12,12 +12,29 @@ const TD_FOTO = 'py-2 md:py-4 px-3 md:px-6 bg-[#F8FDFA]';
 interface SessionTableProps {
   children: SessionChild[];
   onTogglePhotosReady: (sessionChildId: string, ready: boolean) => void;
+  onToggleSessionPhotos: (sessionChildIds: string[], hasPhotos: boolean) => void;
 }
 
-export function SessionTable({ children, onTogglePhotosReady }: SessionTableProps) {
+export function SessionTable({ children, onTogglePhotosReady, onToggleSessionPhotos }: SessionTableProps) {
   const sorted = [...children].sort((a, b) =>
     a.childName.localeCompare(b.childName, 'pt'),
   );
+
+  function handleTogglePhotos(child: SessionChild) {
+    const newValue = !child.hasPhotoPlan;
+    const siblingIds = children
+      .filter((c) => c.registrationId === child.registrationId)
+      .map((c) => c.sessionChildId);
+
+    if (newValue && child.assignedPhotoCount + 1 > child.fotoSessions) {
+      const confirmed = window.confirm(
+        `Esta família já tem ${child.assignedPhotoCount}/${child.fotoSessions} sessões foto atribuídas. Adicionar mesmo assim?`,
+      );
+      if (!confirmed) return;
+    }
+
+    onToggleSessionPhotos(siblingIds, newValue);
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -49,13 +66,43 @@ export function SessionTable({ children, onTogglePhotosReady }: SessionTableProp
               </td>
               <td className={TD_FOTO}>
                 <div className="flex justify-center">
-                  {child.hasPhotoPlan ? (
-                    <div className="w-7 h-7 rounded-full bg-check-bg flex items-center justify-center">
-                      <Check size={14} weight="bold" className="text-check-icon" />
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
+                  {(() => {
+                    const isToggleable = child.fotoSessions > 0 || child.hasPhotoPlan;
+                    if (!isToggleable) {
+                      return <span className="text-gray-400">—</span>;
+                    }
+
+                    const isOverAssigned = child.assignedPhotoCount > child.fotoSessions;
+
+                    return (
+                      <button
+                        onClick={() => handleTogglePhotos(child)}
+                        title={
+                          child.hasPhotoPlan && isOverAssigned
+                            ? `Sessões foto atribuídas excedem o plano (${child.assignedPhotoCount}/${child.fotoSessions})`
+                            : undefined
+                        }
+                        className={`group w-7 h-7 rounded-full border-[1.5px] flex items-center justify-center transition-colors touch-manipulation ${
+                          child.hasPhotoPlan
+                            ? isOverAssigned
+                              ? 'border-amber-500 bg-amber-500'
+                              : 'border-emerald-600 bg-emerald-600'
+                            : 'border-gray-300 bg-transparent hover:border-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        aria-label={child.hasPhotoPlan ? 'Remover foto desta sessão' : 'Marcar foto nesta sessão'}
+                      >
+                        <Check
+                          size={14}
+                          weight="bold"
+                          className={
+                            child.hasPhotoPlan
+                              ? 'text-white'
+                              : 'text-transparent group-hover:text-emerald-300'
+                          }
+                        />
+                      </button>
+                    );
+                  })()}
                 </div>
               </td>
               <td className={TD_FOTO}>
