@@ -222,6 +222,7 @@ export async function POST(request: NextRequest) {
         num_children: numChildren,
         total_price: unitPrice * numChildren,
         has_photos: parsed?.hasPhotos ?? false,
+        foto_sessions: parsed?.hasPhotos ? (parsed?.numSessions ?? 0) : 0,
         selected_dates: selectedDates,
         image_consent: body.consentimento ?? null,
         nif: body.nif ?? null,

@@ -25,6 +25,7 @@ export interface Registration {
   status: RegistrationStatus;
   image_consent: string | null;
   has_photos: boolean;
+  foto_sessions: number | null;
   voucher_code: string | null;
   notes: string | null;
   nif: string | null;
@@ -104,5 +105,6 @@ export interface SessionChild {
   present: boolean | null;
   marked_at: string | null;
   photos_ready: boolean;
+  per_session_value: number | null;
   created_at: string;
 }

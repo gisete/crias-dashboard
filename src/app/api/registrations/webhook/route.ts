@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
         num_children: children.length || 1,
         total_price: parsed?.unitPrice ?? 0,
         has_photos: parsed?.hasPhotos ?? false,
+        foto_sessions: parsed?.hasPhotos ? (parsed?.numSessions ?? 0) : 0,
         selected_dates: body.datas_selecionadas ?? [],
         image_consent: body.consentimento ?? null,
         nif: body.nif ?? null,

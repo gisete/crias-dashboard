@@ -100,6 +100,7 @@ export async function PATCH(
       unit_price: submission.unit_price,
       num_sessions: submission.num_sessions,
       has_photos: submission.has_photos,
+      foto_sessions: submission.has_photos ? submission.num_sessions : 0,
       num_children: childNames.length || 1,
       total_price: submission.unit_price * (childNames.length || 1),
       selected_dates: submission.selected_dates,
