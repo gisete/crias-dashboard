@@ -27,6 +27,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-01T09:00:00Z',
     updated_at: '2026-06-01T09:00:00Z',
     family: {
@@ -66,6 +67,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-02T10:30:00Z',
     updated_at: '2026-06-05T14:00:00Z',
     family: {
@@ -106,6 +108,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-03T08:15:00Z',
     updated_at: '2026-06-03T08:15:00Z',
     family: {
@@ -145,6 +148,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: true,
     webhook_error_message: 'Timeout ao tentar contactar o endpoint do Brevo. Retentar.',
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-04T11:00:00Z',
     updated_at: '2026-06-04T11:00:00Z',
     family: {
@@ -184,6 +188,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-04T14:20:00Z',
     updated_at: '2026-06-06T09:00:00Z',
     family: {
@@ -223,6 +228,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-05T09:45:00Z',
     updated_at: '2026-06-10T12:00:00Z',
     family: {
@@ -263,6 +269,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-06T10:00:00Z',
     updated_at: '2026-06-06T10:00:00Z',
     family: {
@@ -302,6 +309,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-06T16:30:00Z',
     updated_at: '2026-06-08T10:00:00Z',
     family: {
@@ -341,6 +349,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-07T08:00:00Z',
     updated_at: '2026-06-12T11:00:00Z',
     family: {
@@ -380,6 +389,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-08T09:20:00Z',
     updated_at: '2026-06-08T09:20:00Z',
     family: {
@@ -419,6 +429,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-09T13:00:00Z',
     updated_at: '2026-06-11T09:30:00Z',
     family: {
@@ -458,6 +469,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-10T10:45:00Z',
     updated_at: '2026-06-10T10:45:00Z',
     family: {
@@ -497,6 +509,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-11T08:30:00Z',
     updated_at: '2026-06-15T14:00:00Z',
     family: {
@@ -536,6 +549,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-12T11:15:00Z',
     updated_at: '2026-06-12T11:15:00Z',
     family: {
@@ -575,6 +589,7 @@ const MOCK_REGISTRATIONS: RegistrationWithDetails[] = [
     webhook_error: false,
     webhook_error_message: null,
     brevo_flag: null,
+    sessao_cheia_notified_at: null,
     created_at: '2026-06-13T09:00:00Z',
     updated_at: '2026-06-16T10:00:00Z',
     family: {

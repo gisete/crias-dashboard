@@ -1,3 +1,5 @@
+import { capitalizeMonth } from '@/lib/months';
+
 /**
  * Strip any trailing text after the slot parenthesis, e.g.
  * "11 (manhã) 2 VAGAS" -> "11 (manhã)". Returns the input unchanged if it
@@ -7,6 +9,22 @@
 export function normalizeDateEntry(raw: string): string {
   const match = raw.match(/^\d+\s*\((manhã|tarde)\)/);
   return match ? match[0] : raw;
+}
+
+/**
+ * Turns a stored selected_dates entry into family-facing Portuguese for
+ * emails: "12 (tarde)" + "julho" -> "12 de julho (tarde)". The month is read
+ * back through capitalizeMonth to restore the accent Tally strips
+ * ("marco" -> "março"), then lowercased since Portuguese months stay
+ * lowercase mid-sentence. Unrecognized entries pass through unchanged, the
+ * same way normalizeDateEntry handles them — malformed rows still exist in
+ * production (see migration 007).
+ */
+export function formatSelectedDate(entry: string, month: string): string {
+  const match = entry.match(/^(\d+)\s*\((manhã|tarde)\)/);
+  if (!match) return entry;
+  const [, day, slot] = match;
+  return `${day} de ${capitalizeMonth(month).toLowerCase()} (${slot})`;
 }
 
 /**

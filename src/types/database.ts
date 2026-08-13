@@ -34,6 +34,7 @@ export interface Registration {
   webhook_error: boolean;
   webhook_error_message: string | null;
   brevo_flag: string | null;
+  sessao_cheia_notified_at: string | null;
   created_at: string;
   updated_at: string;
 }

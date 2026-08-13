@@ -337,6 +337,24 @@ export async function recomputeSessionValues(id: string): Promise<{ success: boo
   return { success: res.ok };
 }
 
+export async function notifySessaoCheia(
+  registrationId: string,
+  date: string | null
+): Promise<{ success: boolean; notified_at?: string; error?: string }> {
+  const res = await fetch(`/api/registrations/${registrationId}/notify-sessao-cheia`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error ?? 'Erro ao enviar notificação.' };
+  }
+
+  return { success: true, notified_at: data.notified_at };
+}
+
 export async function resyncRegistration(id: string): Promise<ResyncResult> {
   const res = await fetch(`/api/registrations/${id}/resync`, { method: 'POST' });
   const data = await res.json();

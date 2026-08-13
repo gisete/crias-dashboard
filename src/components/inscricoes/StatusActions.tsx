@@ -3,15 +3,29 @@
 import { useState } from 'react';
 import { CheckCircle, Envelope, CircleNotch } from '@phosphor-icons/react';
 import type { RegistrationStatus } from '@/types/database';
+import { SessaoCheiaButton } from './SessaoCheiaButton';
 
 interface Props {
   status: RegistrationStatus;
   onAction: (newStatus: RegistrationStatus) => Promise<void>;
   hasVoucher: boolean;
   childrenCount: number;
+  selectedDates: string[];
+  month: string;
+  sessaoCheiaNotifiedAt: string | null;
+  onSessaoCheia: (date: string | null) => Promise<void>;
 }
 
-export function StatusActions({ status, onAction, hasVoucher, childrenCount }: Props) {
+export function StatusActions({
+  status,
+  onAction,
+  hasVoucher,
+  childrenCount,
+  selectedDates,
+  month,
+  sessaoCheiaNotifiedAt,
+  onSessaoCheia,
+}: Props) {
   const [loading, setLoading] = useState<RegistrationStatus | null>(null);
 
   if (status === 'pago_confirmado' || status === 'cancelado') return null;
@@ -33,6 +47,15 @@ export function StatusActions({ status, onAction, hasVoucher, childrenCount }: P
 
   return (
     <div className="flex flex-row flex-wrap gap-3">
+      {status === 'pendente' && (
+        <SessaoCheiaButton
+          selectedDates={selectedDates}
+          month={month}
+          sessaoCheiaNotifiedAt={sessaoCheiaNotifiedAt}
+          onSessaoCheia={onSessaoCheia}
+        />
+      )}
+
       {status === 'pendente' && (
         hasVoucher && childrenCount === 1 ? (
           <button

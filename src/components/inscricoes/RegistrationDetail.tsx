@@ -14,6 +14,7 @@ import {
   updateFamily,
   updateChild,
   recomputeSessionValues,
+  notifySessaoCheia,
 } from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
 import { formatPlanBreakdown } from '@/lib/plan-display';
@@ -184,6 +185,16 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     if (!pendingStatus) return;
     await applyStatus(pendingStatus, { silent: true });
     setPendingStatus(null);
+  }
+
+  async function handleSessaoCheia(date: string | null) {
+    const result = await notifySessaoCheia(reg.id, date);
+    if (!result.success) {
+      showToast(result.error ?? 'Erro ao enviar notificação', 'error');
+      return;
+    }
+    onUpdate(reg.id, { sessao_cheia_notified_at: result.notified_at });
+    showToast('Notificação de sessão cheia enviada');
   }
 
   async function handleResend() {
@@ -440,6 +451,10 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                   onAction={handleStatusChange}
                   hasVoucher={!!reg.voucher_code}
                   childrenCount={children.length}
+                  selectedDates={reg.selected_dates}
+                  month={reg.month}
+                  sessaoCheiaNotifiedAt={reg.sessao_cheia_notified_at}
+                  onSessaoCheia={handleSessaoCheia}
                 />
               </div>
             </div>
