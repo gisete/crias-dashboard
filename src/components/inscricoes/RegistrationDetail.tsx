@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { PencilSimple, Check, X } from '@phosphor-icons/react';
+import { PencilSimple, Check, X, Trash, XCircle } from '@phosphor-icons/react';
 import type { RegistrationWithDetails, RegistrationStatus, Child } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
@@ -15,6 +15,7 @@ import {
   updateChild,
   recomputeSessionValues,
   notifySessaoCheia,
+  deleteRegistration,
 } from '@/lib/data/registrations';
 import { parsePlan } from '@/lib/plan-parser';
 import { formatPlanBreakdown } from '@/lib/plan-display';
@@ -22,7 +23,6 @@ import { reassignSessionPhotos } from '@/lib/data/sessions';
 import { InlineEditField } from './InlineEditField';
 import { StatusActions } from './StatusActions';
 import { WebhookErrorBanner } from './WebhookErrorBanner';
-import { DeleteRegistrationButton } from './DeleteRegistrationButton';
 import { ResyncButton } from './ResyncButton';
 
 interface Props {
@@ -68,6 +68,19 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   const [editingDates, setEditingDates] = useState(false);
   const [datesDraft, setDatesDraft] = useState('');
   const [pendingStatus, setPendingStatus] = useState<RegistrationStatus | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !deleting) setShowDeleteModal(false);
+    }
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [showDeleteModal, deleting]);
 
   useEffect(() => {
     if (!statusOpen) return;
@@ -197,6 +210,29 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     showToast('Notificação de sessão cheia enviada');
   }
 
+  // On success the row disappears via the realtime subscription — nothing to
+  // update here.
+  async function handleDelete() {
+    setDeleting(true);
+    const result = await deleteRegistration(reg.id);
+    setDeleting(false);
+    setShowDeleteModal(false);
+    if (!result.success) {
+      setDeleteError('Erro ao eliminar. Tente novamente.');
+    }
+  }
+
+  // Non-silent status change, so the Make webhook fires the cancellation email.
+  async function handleCancelRegistration() {
+    if (cancelling) return;
+    if (!window.confirm('Tem a certeza que quer cancelar esta inscrição? Será enviado um email de cancelamento.')) {
+      return;
+    }
+    setCancelling(true);
+    await applyStatus('cancelado');
+    setCancelling(false);
+  }
+
   async function handleResend() {
     const result = await updateRegistrationStatus(reg.id, reg.status);
     if (result.success) {
@@ -213,8 +249,22 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
           <div className="p-10 relative">
             {/* Sits in the panel's padding whitespace so it clears the
                 NIF field at the top of column 3. */}
-            <div className="absolute top-6 right-6 z-10">
+            <div className="absolute top-6 right-6 z-10 flex items-start gap-3">
               <ResyncButton registrationId={reg.id} family={family} onUpdate={onUpdate} />
+              <div className="flex flex-col items-end gap-1.5">
+                <button
+                  onClick={() => { setDeleteError(null); setShowDeleteModal(true); }}
+                  disabled={deleting}
+                  title="Eliminar inscrição"
+                  aria-label="Eliminar inscrição"
+                  className="text-red-500 hover:text-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Trash size={18} />
+                </button>
+                {deleteError && (
+                  <p className="text-label-sm text-red-500 whitespace-nowrap">{deleteError}</p>
+                )}
+              </div>
             </div>
             {reg.webhook_error && reg.webhook_error_message && (
               <WebhookErrorBanner
@@ -444,7 +494,18 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
 
             {/* Footer row */}
             <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
-              <DeleteRegistrationButton registrationId={reg.id} childNames={childNamesStr} />
+              {reg.status !== 'cancelado' ? (
+                <button
+                  onClick={handleCancelRegistration}
+                  disabled={cancelling}
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-label-md border border-red-500 text-red-500 bg-transparent hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  <XCircle size={16} />
+                  Cancelar Inscrição
+                </button>
+              ) : (
+                <span />
+              )}
               <div className="flex items-center gap-4">
                 <StatusActions
                   status={reg.status}
@@ -461,6 +522,43 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
           </div>
         </td>
       </tr>
+
+      {showDeleteModal && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => { if (!deleting) setShowDeleteModal(false); }}
+        >
+          <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
+          <div
+            className="relative bg-surface-container-lowest rounded-2xl shadow-xl p-8 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-headline-md text-gray-900 mb-3">Eliminar inscrição?</h2>
+            <p className="text-body-md text-gray-600 mb-8">
+              Esta ação vai eliminar permanentemente a inscrição
+              {childNamesStr ? ` de ${childNamesStr}` : ''} e todos os dados associados (família e crianças).
+              Esta ação não pode ser revertida.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-5 py-2.5 rounded-xl text-label-md border border-primary text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-5 py-2.5 rounded-xl text-label-md bg-error text-white hover:bg-error/90 transition-colors disabled:opacity-70"
+              >
+                {deleting ? 'A eliminar...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {pendingStatus && createPortal(
         <div
