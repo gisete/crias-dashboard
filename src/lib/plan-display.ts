@@ -31,7 +31,8 @@ export function getInitials(name: string): string {
 export function getFirstLastName(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length <= 2) return name.trim();
-  return `${parts[0]} ${parts[parts.length - 1]}`;
+  const initial = `${parts[1].charAt(0).toUpperCase()}.`;
+  return `${parts[0]} ${initial} ${parts[parts.length - 1]}`;
 }
 
 export function formatSessionValue(v: number): string {

@@ -45,8 +45,8 @@ describe('getInitials', () => {
 });
 
 describe('getFirstLastName', () => {
-  it('returns first and last for a three-part name', () => {
-    expect(getFirstLastName('Ana Sofia Mendes')).toBe('Ana Mendes');
+  it('inserts the second word initial for a three-part name', () => {
+    expect(getFirstLastName('Ana Sofia Mendes')).toBe('Ana S. Mendes');
   });
 
   it('returns unchanged for a two-part name', () => {
@@ -58,11 +58,16 @@ describe('getFirstLastName', () => {
   });
 
   it('handles extra whitespace', () => {
-    expect(getFirstLastName('  Maria  João  Ferreira  ')).toBe('Maria Ferreira');
+    expect(getFirstLastName('  Maria  João  Ferreira  ')).toBe('Maria J. Ferreira');
   });
 
-  it('handles four-part name', () => {
-    expect(getFirstLastName('Maria João Costa Ferreira')).toBe('Maria Ferreira');
+  it('uses the second word initial for a four-part name', () => {
+    expect(getFirstLastName('Maria João Costa Ferreira')).toBe('Maria J. Ferreira');
+  });
+
+  it('distinguishes siblings with the same first and last name', () => {
+    expect(getFirstLastName('Maria Silva Santos')).toBe('Maria S. Santos');
+    expect(getFirstLastName('Maria João Santos')).toBe('Maria J. Santos');
   });
 });
 

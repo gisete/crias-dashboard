@@ -13,20 +13,22 @@ export function shortName(name: string): string {
 const PORTUGUESE_PARTICLES = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
 
 /**
- * Returns first word + last surname, keeping a Portuguese connecting
- * particle (de, da, do, das, dos, e) when it immediately precedes the
- * last surname: "Afonso Sequeira Vieira da Luz" → "Afonso da Luz"
+ * Returns first word + second word initial + last surname, keeping a
+ * Portuguese connecting particle (de, da, do, das, dos, e) when it
+ * immediately precedes the last surname:
+ * "Afonso Sequeira Vieira da Luz" → "Afonso S. da Luz"
  */
 export function shortenName(fullName: string): string {
   const words = fullName.trim().split(/\s+/).filter(Boolean);
   if (words.length <= 2) return words.join(' ');
 
   const first = words[0];
+  const initial = `${words[1].charAt(0).toUpperCase()}.`;
   const last = words[words.length - 1];
   const beforeLast = words[words.length - 2];
 
   if (PORTUGUESE_PARTICLES.has(beforeLast.toLowerCase())) {
-    return `${first} ${beforeLast} ${last}`;
+    return `${first} ${initial} ${beforeLast} ${last}`;
   }
-  return `${first} ${last}`;
+  return `${first} ${initial} ${last}`;
 }

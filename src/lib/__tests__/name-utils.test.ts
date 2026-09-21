@@ -1,18 +1,18 @@
 import { shortenName } from '../name-utils';
 
 describe('shortenName', () => {
-  it('keeps the particle immediately preceding the last surname', () => {
-    expect(shortenName('Afonso Sequeira Vieira da Luz')).toBe('Afonso da Luz');
+  it('inserts the second word initial and keeps the particle preceding the last surname', () => {
+    expect(shortenName('Afonso Sequeira Vieira da Luz')).toBe('Afonso S. da Luz');
   });
 
-  it('drops a non-particle word before the last surname', () => {
+  it('drops a non-particle word before the last surname, keeping the second word initial', () => {
     expect(shortenName('Maria Carlota Fernandes Silveira da Mata Nogueira')).toBe(
-      'Maria Nogueira',
+      'Maria C. Nogueira',
     );
   });
 
-  it('returns first + last name when no particle precedes the surname', () => {
-    expect(shortenName('Vasco Braga Costa Felizardo')).toBe('Vasco Felizardo');
+  it('inserts the second word initial when no particle precedes the surname', () => {
+    expect(shortenName('Vasco Braga Costa Felizardo')).toBe('Vasco B. Felizardo');
   });
 
   it('leaves a single-word name unchanged', () => {
@@ -24,10 +24,19 @@ describe('shortenName', () => {
   });
 
   it('trims and collapses extra whitespace', () => {
-    expect(shortenName('  Afonso   Sequeira  Vieira   da   Luz  ')).toBe('Afonso da Luz');
+    expect(shortenName('  Afonso   Sequeira  Vieira   da   Luz  ')).toBe('Afonso S. da Luz');
   });
 
   it('matches particles case-insensitively', () => {
-    expect(shortenName('Afonso Sequeira Vieira DA Luz')).toBe('Afonso DA Luz');
+    expect(shortenName('Afonso Sequeira Vieira DA Luz')).toBe('Afonso S. DA Luz');
+  });
+
+  it('inserts the second word initial alongside a kept particle', () => {
+    expect(shortenName('Mariana Silva Bandeira de Vasconcelos')).toBe('Mariana S. de Vasconcelos');
+  });
+
+  it('distinguishes siblings with the same first and last name', () => {
+    expect(shortenName('Maria Silva Santos')).toBe('Maria S. Santos');
+    expect(shortenName('Maria João Santos')).toBe('Maria J. Santos');
   });
 });
