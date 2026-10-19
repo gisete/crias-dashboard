@@ -1,6 +1,7 @@
 import { supabaseClient } from '@/lib/supabase/client';
 import type { RegistrationWithDetails, Child } from '@/types/database';
 import { getTodayLisbon } from '@/lib/date-utils';
+import type { MissingField } from '@/lib/registration-validation';
 
 /**
  * Children soft-removed from a family's Brevo contact stay in the table so
@@ -298,17 +299,27 @@ export async function deleteRegistration(
   return { success: true };
 }
 
+export interface UpdateStatusResult {
+  success: boolean;
+  missing?: MissingField[];
+  message?: string;
+}
+
 export async function updateRegistrationStatus(
   id: string,
   newStatus: string,
   options?: { silent?: boolean }
-): Promise<{ success: boolean }> {
+): Promise<UpdateStatusResult> {
   const res = await fetch(`/api/registrations/${id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: newStatus, silent: options?.silent ?? false }),
   });
-  return { success: res.ok };
+
+  if (res.ok) return { success: true };
+
+  const data = await res.json().catch(() => ({}));
+  return { success: false, missing: data.missing, message: data.message };
 }
 
 export async function toggleFaturaEnviada(
