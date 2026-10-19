@@ -17,6 +17,8 @@ interface Props {
   displayValue?: ReactNode;
   /** Overrides the default text classes for the plain-text display value. */
   valueClassName?: string;
+  /** Refuses to save a blank value and shows an amber "Em falta" placeholder when blank. */
+  required?: boolean;
 }
 
 export function InlineEditField({
@@ -31,12 +33,19 @@ export function InlineEditField({
   onSave,
   displayValue,
   valueClassName = 'text-body-md text-gray-900',
+  required = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
+    if (required && draft.trim() === '') {
+      setError('Campo obrigatório');
+      return;
+    }
+    setError(null);
     setSaving(true);
     await onSave(fieldName, draft);
     setSaving(false);
@@ -45,11 +54,13 @@ export function InlineEditField({
 
   function handleCancel() {
     setDraft(value ?? '');
+    setError(null);
     setEditing(false);
   }
 
   function startEditing() {
     setDraft(value ?? '');
+    setError(null);
     setEditing(true);
   }
 
@@ -122,6 +133,7 @@ export function InlineEditField({
             <X size={14} weight="bold" />
           </button>
         </div>
+        {error && <p className="text-label-sm text-error mt-1">{error}</p>}
       </div>
     );
   }
@@ -139,6 +151,8 @@ export function InlineEditField({
           displayValue
         ) : value ? (
           <span className={valueClassName}>{value}</span>
+        ) : required ? (
+          <span className="text-body-md text-amber-600 font-medium">Em falta</span>
         ) : (
           <span className="text-body-md text-gray-400">—</span>
         )}
