@@ -2,8 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createSessionEntries, removeSessionEntries } from '@/lib/data/sessions-sync';
 import { sendStatusWebhook } from '@/lib/make-webhook';
+import { getMissingFields, formatMissingFields } from '@/lib/registration-validation';
 import { ALL_STATUSES } from '@/lib/status-utils';
 import type { RegistrationStatus } from '@/types/database';
+
+interface FetchedRegistration {
+  status: RegistrationStatus;
+  webhook_error: boolean;
+  webhook_error_message: string | null;
+  month: string;
+  plan: string;
+  unit_price: number;
+  num_sessions: number;
+  num_children: number;
+  selected_dates: string[];
+  family: { parent_name: string; email: string; phone: string | null } | null;
+  children: { name: string; removed_at: string | null }[] | null;
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -27,9 +42,11 @@ export async function PATCH(
 
   const supabase = createServerClient();
 
-  const { data: current, error: fetchError } = await supabase
+  const { data, error: fetchError } = await supabase
     .from('registrations')
-    .select('status, webhook_error')
+    .select(
+      'status, webhook_error, webhook_error_message, month, plan, unit_price, num_sessions, num_children, selected_dates, family:families(parent_name, email, phone), children(name, removed_at)',
+    )
     .eq('id', id)
     .maybeSingle();
 
@@ -37,11 +54,37 @@ export async function PATCH(
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
-  if (!current) {
+  if (!data) {
     return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
   }
 
-  const oldStatus = current.status as RegistrationStatus;
+  const current = data as unknown as FetchedRegistration;
+  const oldStatus = current.status;
+
+  const missing = getMissingFields(
+    {
+      month: current.month,
+      plan: current.plan,
+      unit_price: current.unit_price,
+      num_sessions: current.num_sessions,
+      num_children: current.num_children,
+      selected_dates: current.selected_dates,
+      family: current.family ?? { parent_name: null, email: null, phone: null },
+      children: current.children ?? [],
+    },
+    { target: status, silent },
+  );
+
+  if (missing.length > 0) {
+    return NextResponse.json(
+      {
+        error: 'dados_em_falta',
+        message: `Faltam dados: ${formatMissingFields(missing)}.`,
+        missing,
+      },
+      { status: 422 },
+    );
+  }
 
   const { error: updateError } = await supabase
     .from('registrations')
