@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { PencilSimple, Check, X, Trash, XCircle } from '@phosphor-icons/react';
+import { PencilSimple, Check, X, Trash, XCircle, Warning } from '@phosphor-icons/react';
 import type { RegistrationWithDetails, RegistrationStatus, Child } from '@/types/database';
 import { calculateAge } from '@/lib/age-calculator';
 import { STATUS_LABELS, STATUS_PILL, ALL_STATUSES } from '@/lib/status-utils';
@@ -17,6 +17,7 @@ import {
   notifySessaoCheia,
   deleteRegistration,
 } from '@/lib/data/registrations';
+import { getMissingFields, formatMissingFields, type MissingField } from '@/lib/registration-validation';
 import { parsePlan } from '@/lib/plan-parser';
 import { formatPlanBreakdown } from '@/lib/plan-display';
 import { reassignSessionPhotos } from '@/lib/data/sessions';
@@ -40,6 +41,18 @@ const STATUS_TOAST_MESSAGES: Partial<Record<RegistrationStatus, string>> = {
   cancelado: 'Inscrição cancelada',
 };
 
+function getNextStatus(reg: RegistrationWithDetails): RegistrationStatus | null {
+  if (reg.status === 'pendente') {
+    return reg.voucher_code && reg.children.length === 1 ? 'pago_confirmado' : 'a_pagar';
+  }
+  if (reg.status === 'a_pagar' || reg.status === 'lembrete') return 'pago_confirmado';
+  return null;
+}
+
+function buildBlockedToast(missing: MissingField[]): string {
+  return `Não foi possível alterar o estado. Falta: ${formatMissingFields(missing)}.`;
+}
+
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
@@ -62,11 +75,15 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 
 export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange }: Props) {
   const { family, children } = reg;
+  const nextStatus = getNextStatus(reg);
+  const missing = nextStatus ? getMissingFields(reg, { target: nextStatus, silent: false }) : [];
+  const disabledReason = missing.length > 0 ? 'Preencha os campos em falta para continuar' : undefined;
   const { showToast } = useToast();
   const [statusOpen, setStatusOpen] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const [editingDates, setEditingDates] = useState(false);
   const [datesDraft, setDatesDraft] = useState('');
+  const [datesError, setDatesError] = useState<string | null>(null);
   const [pendingStatus, setPendingStatus] = useState<RegistrationStatus | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -164,7 +181,14 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   async function applyStatus(newStatus: RegistrationStatus, options?: { silent?: boolean }) {
     const result = await updateRegistrationStatus(reg.id, newStatus, options);
     if (!result.success) {
-      showToast('Erro ao atualizar estado', 'error');
+      // A stale client (data changed elsewhere since this panel loaded) can
+      // still hit the server's 422 even after the client-side gate passed —
+      // this is the one place that surfaces it, never the generic message.
+      if (result.missing && result.missing.length > 0) {
+        showToast(buildBlockedToast(result.missing), 'error');
+      } else {
+        showToast('Erro ao atualizar estado', 'error');
+      }
       return;
     }
     onStatusChange(reg.id, newStatus);
@@ -189,6 +213,11 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     if (newStatus === reg.status) return;
     if (reg.status === 'pago_confirmado' && newStatus !== 'pago_confirmado') {
       setPendingStatus(newStatus);
+      return;
+    }
+    const silentMissing = getMissingFields(reg, { target: newStatus, silent: true });
+    if (silentMissing.length > 0) {
+      showToast(buildBlockedToast(silentMissing), 'error');
       return;
     }
     applyStatus(newStatus, { silent: true });
@@ -234,9 +263,16 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
   }
 
   async function handleResend() {
+    const resendMissing = getMissingFields(reg, { target: reg.status, silent: false });
+    if (resendMissing.length > 0) {
+      showToast(buildBlockedToast(resendMissing), 'error');
+      return;
+    }
     const result = await updateRegistrationStatus(reg.id, reg.status);
     if (result.success) {
       onUpdate(reg.id, { webhook_error: false, webhook_error_message: null });
+    } else if (result.missing && result.missing.length > 0) {
+      showToast(buildBlockedToast(result.missing), 'error');
     }
   }
 
@@ -288,6 +324,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                         <InlineEditField
                           value={child.name}
                           fieldName="name"
+                          required
                           valueClassName="text-body-lg font-medium text-gray-900"
                           onSave={(fieldName, value) => handleChildSave(child.id, fieldName, value)}
                         />
@@ -314,6 +351,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                     label="Responsável"
                     value={family.parent_name}
                     fieldName="parent_name"
+                    required
                     onSave={handleFamilySave}
                   />
                   <Field
@@ -379,6 +417,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                     label="Escolha"
                     value={reg.plan}
                     fieldName="plan"
+                    required
                     onSave={handlePlanSave}
                   />
                   <span className="block mt-1 text-label-md text-gray-500">
@@ -413,30 +452,42 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                 <div>
                   <span className="block mb-1 text-label-sm text-gray-400 uppercase tracking-wider">Sessões agendadas</span>
                   {editingDates ? (
-                    <div className="flex items-start gap-2">
-                      <input
-                        type="text"
-                        className="flex-1 text-body-md border border-surface-container-highest rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        value={datesDraft}
-                        onChange={(e) => setDatesDraft(e.target.value)}
-                        autoFocus
-                      />
-                      <button
-                        onClick={async () => { await handleDatesSave('selected_dates', datesDraft); setEditingDates(false); }}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors shrink-0 mt-0.5"
-                      >
-                        <Check size={14} weight="bold" />
-                      </button>
-                      <button
-                        onClick={() => setEditingDates(false)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-container-highest hover:bg-surface-container text-gray-500 transition-colors shrink-0 mt-0.5"
-                      >
-                        <X size={14} weight="bold" />
-                      </button>
+                    <div>
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="text"
+                          className="flex-1 text-body-md border border-surface-container-highest rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          value={datesDraft}
+                          onChange={(e) => setDatesDraft(e.target.value)}
+                          autoFocus
+                        />
+                        <button
+                          onClick={async () => {
+                            const dates = datesDraft.split(',').map((s) => s.trim()).filter(Boolean);
+                            if (dates.length === 0) {
+                              setDatesError('Campo obrigatório');
+                              return;
+                            }
+                            setDatesError(null);
+                            await handleDatesSave('selected_dates', datesDraft);
+                            setEditingDates(false);
+                          }}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors shrink-0 mt-0.5"
+                        >
+                          <Check size={14} weight="bold" />
+                        </button>
+                        <button
+                          onClick={() => setEditingDates(false)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-container-highest hover:bg-surface-container text-gray-500 transition-colors shrink-0 mt-0.5"
+                        >
+                          <X size={14} weight="bold" />
+                        </button>
+                      </div>
+                      {datesError && <p className="text-label-sm text-error mt-1">{datesError}</p>}
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setDatesDraft(reg.selected_dates.join(', ')); setEditingDates(true); }}
+                      onClick={() => { setDatesDraft(reg.selected_dates.join(', ')); setDatesError(null); setEditingDates(true); }}
                       className="group flex flex-wrap items-center gap-2 w-fit text-left -mx-1.5 -my-0.5 px-1.5 py-0.5 rounded-md hover:bg-surface-container-low transition-colors cursor-pointer"
                     >
                       {reg.selected_dates.length > 0 ? (
@@ -492,8 +543,20 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               </div>
             </div>
 
+            {missing.length > 0 && (
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-400 rounded-xl p-4 mt-8">
+                <Warning size={18} weight="fill" className="text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-body-md font-medium text-amber-800">Faltam dados para avançar</p>
+                  <p className="text-body-md text-amber-700">
+                    Preencha os campos em falta antes de alterar o estado: {formatMissingFields(missing)}.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Footer row */}
-            <div className="mt-8 pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4">
+            <div className={`${missing.length > 0 ? 'mt-6' : 'mt-8'} pt-6 border-t border-surface-container-highest flex items-center justify-between gap-4`}>
               {reg.status !== 'cancelado' ? (
                 <button
                   onClick={handleCancelRegistration}
@@ -516,6 +579,7 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                   month={reg.month}
                   sessaoCheiaNotifiedAt={reg.sessao_cheia_notified_at}
                   onSessaoCheia={handleSessaoCheia}
+                  disabledReason={disabledReason}
                 />
               </div>
             </div>
