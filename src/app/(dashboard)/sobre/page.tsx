@@ -152,6 +152,10 @@ export default function SobrePage() {
             A alteração manual do estado também dispara o envio de email. Usar com cuidado.
           </Warning>
 
+          <Tip>
+            Se faltarem dados obrigatórios (por exemplo, nome do responsável, plano ou datas selecionadas), o painel da inscrição mostra um aviso a laranja e os botões de ação ficam bloqueados até esses campos serem preenchidos.
+          </Tip>
+
           <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Fatura enviada</h3>
           <p className="mb-3">
             Na lista de inscrições, a coluna <strong>Fatura</strong> permite marcar que a fatura foi enviada. Clicar no círculo para marcar como enviada (fica verde) e clicar novamente para desmarcar.

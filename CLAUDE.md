@@ -15,6 +15,7 @@ Used by 1-2 people. ~180 registrations/month.
 - API routes in route handlers (no server actions)
 - Database types in src/types/database.ts — keep in sync with schema
 - Plan parsing logic in src/lib/plan-parser.ts — this is the source of truth for price/session/photo extraction
+- Status changes are gated by src/lib/registration-validation.ts — update it whenever the Make/Brevo payload gains a required field.
 
 ## Data model
 Three main tables: families, registrations, children.
