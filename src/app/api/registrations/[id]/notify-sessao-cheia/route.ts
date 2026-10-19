@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { buildStatusWebhookPayload, type WebhookRegistration, type WebhookFamily, type WebhookChild } from '@/lib/make-webhook';
 import { formatSelectedDate } from '@/lib/date-utils';
 import type { RegistrationStatus } from '@/types/database';
+import { getMissingFields, formatMissingFields } from '@/lib/registration-validation';
 
 interface FetchedRegistration extends WebhookRegistration {
   family: WebhookFamily | null;
@@ -52,6 +53,34 @@ export async function POST(
 
   if (!registration.family) {
     return NextResponse.json({ error: 'Registration has no associated family' }, { status: 500 });
+  }
+
+  // Sessão Cheia always fires from a 'pendente' registration but still sends
+  // the full webhook payload, so force the full required-field check with a
+  // non-pendente target — getMissingFields never blocks target 'pendente'.
+  const missing = getMissingFields(
+    {
+      month: registration.month,
+      plan: registration.plan,
+      unit_price: registration.unit_price,
+      num_sessions: registration.num_sessions,
+      num_children: registration.num_children,
+      selected_dates: registration.selected_dates,
+      family: registration.family,
+      children: registration.children ?? [],
+    },
+    { target: 'a_pagar', silent: false },
+  );
+
+  if (missing.length > 0) {
+    return NextResponse.json(
+      {
+        error: 'dados_em_falta',
+        message: `Faltam dados: ${formatMissingFields(missing)}.`,
+        missing,
+      },
+      { status: 422 },
+    );
   }
 
   // Only a date the family actually picked may reach the customer email.
