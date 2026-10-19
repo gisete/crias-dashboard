@@ -151,6 +151,30 @@ export default function SobrePage() {
           <Warning>
             A alteração manual do estado também dispara o envio de email. Usar com cuidado.
           </Warning>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Fatura enviada</h3>
+          <p className="mb-3">
+            Na lista de inscrições, a coluna <strong>Fatura</strong> permite marcar que a fatura foi enviada. Clicar no círculo para marcar como enviada (fica verde) e clicar novamente para desmarcar.
+          </p>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Sessões foto</h3>
+          <p className="mb-3">
+            No painel de detalhe de cada inscrição, o campo <strong>Sessões Foto</strong> indica quantas datas de sessão incluem fotografias. Este valor é calculado automaticamente com base no plano escolhido, mas pode ser ajustado manualmente.
+          </p>
+          <p className="mb-3">
+            Ao alterar o número, as datas com foto são reatribuídas automaticamente — as primeiras datas por ordem cronológica são marcadas.
+          </p>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Sessão cheia</h3>
+          <p className="mb-3">
+            Quando uma data de sessão atinge a capacidade máxima, é possível notificar famílias em estado <StatusPill status="pendente" label="Pendente" /> de que a data escolhida já não tem vagas.
+          </p>
+          <p className="mb-3">
+            No painel de detalhe da inscrição, quando o estado é Pendente, aparece um botão <strong>Sessão Cheia</strong> ao lado de &quot;Confirmar Dados&quot;. Clicar no botão envia um email à família.
+          </p>
+          <p className="mb-3">
+            Após o envio, o botão transforma-se numa confirmação verde com a data de envio. Para reenviar (por exemplo, se o email falhou), clicar no ícone de repetição ao lado da confirmação.
+          </p>
         </section>
 
         {/* 3 ── Revisão ── */}
@@ -194,6 +218,14 @@ export default function SobrePage() {
           </p>
           <p className="mb-3">
             Apenas crianças com plano fotográfico têm este botão. Usar o filtro &quot;Só fotos&quot; para ver rapidamente o progresso.
+          </p>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Foto por sessão</h3>
+          <p className="mb-3">
+            A coluna <strong>Foto</strong> na tabela de cada sessão indica se aquela data está marcada para fotografias. O ícone é clicável — ao alternar, todas as datas da mesma inscrição são atualizadas automaticamente (as primeiras N datas cronologicamente ficam marcadas, com base no número de sessões foto da inscrição).
+          </p>
+          <p className="mb-3">
+            Se o número de datas com foto ultrapassar o previsto no plano, aparece um indicador âmbar de aviso.
           </p>
         </section>
 
