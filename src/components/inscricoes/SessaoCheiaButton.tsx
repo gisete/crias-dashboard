@@ -10,6 +10,8 @@ interface Props {
   month: string;
   sessaoCheiaNotifiedAt: string | null;
   onSessaoCheia: (date: string | null) => Promise<void>;
+  disabled?: boolean;
+  title?: string;
 }
 
 function formatDayMonth(dateStr: string): string {
@@ -22,6 +24,8 @@ export function SessaoCheiaButton({
   month,
   sessaoCheiaNotifiedAt,
   onSessaoCheia,
+  disabled = false,
+  title,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
@@ -83,8 +87,9 @@ export function SessaoCheiaButton({
     <>
       <button
         onClick={handleClick}
-        disabled={loading}
-        className={`w-auto flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3.5 px-5 rounded-xl text-label-md hover:bg-gray-50 transition-colors ${loading ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''}`}
+        disabled={loading || disabled}
+        title={title}
+        className={`w-auto flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3.5 px-5 rounded-xl text-label-md hover:bg-gray-50 transition-colors ${loading || disabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''}`}
       >
         {loading ? <CircleNotch size={16} className="animate-spin" /> : <Envelope size={16} weight="fill" />}
         Sessão Cheia

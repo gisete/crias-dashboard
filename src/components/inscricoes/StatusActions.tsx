@@ -14,6 +14,7 @@ interface Props {
   month: string;
   sessaoCheiaNotifiedAt: string | null;
   onSessaoCheia: (date: string | null) => Promise<void>;
+  disabledReason?: string;
 }
 
 export function StatusActions({
@@ -25,6 +26,7 @@ export function StatusActions({
   month,
   sessaoCheiaNotifiedAt,
   onSessaoCheia,
+  disabledReason,
 }: Props) {
   const [loading, setLoading] = useState<RegistrationStatus | null>(null);
 
@@ -39,7 +41,8 @@ export function StatusActions({
     }
   }
 
-  const disabledClass = loading ? 'opacity-60 cursor-not-allowed pointer-events-none' : '';
+  const isDisabled = !!loading || !!disabledReason;
+  const disabledClass = isDisabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : '';
 
   function ActionIcon({ forStatus, icon }: { forStatus: RegistrationStatus; icon: React.ReactNode }) {
     return loading === forStatus ? <CircleNotch size={16} className="animate-spin" /> : icon;
@@ -53,6 +56,8 @@ export function StatusActions({
           month={month}
           sessaoCheiaNotifiedAt={sessaoCheiaNotifiedAt}
           onSessaoCheia={onSessaoCheia}
+          disabled={!!disabledReason}
+          title={disabledReason}
         />
       )}
 
@@ -60,7 +65,8 @@ export function StatusActions({
         hasVoucher && childrenCount === 1 ? (
           <button
             onClick={() => handleClick('pago_confirmado')}
-            disabled={!!loading}
+            disabled={isDisabled}
+            title={disabledReason}
             className={`w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm ${disabledClass}`}
           >
             <ActionIcon forStatus="pago_confirmado" icon={<CheckCircle size={16} weight="fill" />} />
@@ -69,7 +75,8 @@ export function StatusActions({
         ) : (
           <button
             onClick={() => handleClick('a_pagar')}
-            disabled={!!loading}
+            disabled={isDisabled}
+            title={disabledReason}
             className={`w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm ${disabledClass}`}
           >
             <ActionIcon forStatus="a_pagar" icon={<CheckCircle size={16} weight="fill" />} />
@@ -82,7 +89,8 @@ export function StatusActions({
         <>
           <button
             onClick={() => handleClick('lembrete')}
-            disabled={!!loading}
+            disabled={isDisabled}
+            title={disabledReason}
             className={`w-auto flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3.5 px-5 rounded-xl text-label-md hover:bg-gray-50 transition-colors ${disabledClass}`}
           >
             <ActionIcon forStatus="lembrete" icon={<Envelope size={16} weight="fill" />} />
@@ -90,7 +98,8 @@ export function StatusActions({
           </button>
           <button
             onClick={() => handleClick('pago_confirmado')}
-            disabled={!!loading}
+            disabled={isDisabled}
+            title={disabledReason}
             className={`w-auto flex items-center justify-center gap-2 bg-on-primary-fixed text-white py-3.5 px-5 rounded-xl text-label-md hover:bg-on-primary-fixed/90 transition-colors shadow-sm ${disabledClass}`}
           >
             <ActionIcon forStatus="pago_confirmado" icon={<CheckCircle size={16} weight="fill" />} />
