@@ -17,7 +17,7 @@ import {
   notifySessaoCheia,
   deleteRegistration,
 } from '@/lib/data/registrations';
-import { getMissingFields, formatMissingFields, type MissingField } from '@/lib/registration-validation';
+import { getMissingFields, formatMissingFields, buildBlockedToast } from '@/lib/registration-validation';
 import { parsePlan } from '@/lib/plan-parser';
 import { formatPlanBreakdown } from '@/lib/plan-display';
 import { reassignSessionPhotos } from '@/lib/data/sessions';
@@ -47,10 +47,6 @@ function getNextStatus(reg: RegistrationWithDetails): RegistrationStatus | null 
   }
   if (reg.status === 'a_pagar' || reg.status === 'lembrete') return 'pago_confirmado';
   return null;
-}
-
-function buildBlockedToast(missing: MissingField[]): string {
-  return `Não foi possível alterar o estado. Falta: ${formatMissingFields(missing)}.`;
 }
 
 function formatDate(iso: string): string {
@@ -354,19 +350,13 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                     required
                     onSave={handleFamilySave}
                   />
-                  <InlineEditField
+                  <Field
                     label="Email"
-                    value={family.email}
-                    fieldName="email"
-                    required
-                    displayValue={
-                      family.email ? (
-                        <a href={`mailto:${family.email}`} className="hover:underline text-body-md text-gray-900">
-                          {family.email}
-                        </a>
-                      ) : undefined
+                    value={
+                      <a href={`mailto:${family.email}`} className="hover:underline">
+                        {family.email}
+                      </a>
                     }
-                    onSave={handleFamilySave}
                   />
                   <InlineEditField
                     label="Telefone"

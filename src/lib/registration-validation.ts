@@ -27,23 +27,6 @@ export interface ValidationRegistration {
   children: ValidationChild[];
 }
 
-/**
- * Required-field list this module enforces. Must stay in sync with what
- * StatusWebhookPayload (src/lib/make-webhook.ts) needs to build a non-empty
- * customer email: parent_name, email, month, plan (+ its derived price and
- * session count), num_children, at least one active child name, and at
- * least one selected date. Update both places together.
- */
-export const REQUIRED_FIELDS = [
-  'parent_name',
-  'email',
-  'month',
-  'plan',
-  'num_children',
-  'child_name',
-  'selected_dates',
-] as const;
-
 function isBlank(value: string | null | undefined): boolean {
   return value == null || value.trim() === '';
 }
@@ -73,6 +56,12 @@ function checkSelectedDates(reg: ValidationRegistration, missing: MissingField[]
   }
 }
 
+/**
+ * Must stay in sync with what StatusWebhookPayload (src/lib/make-webhook.ts)
+ * needs to build a non-empty customer email: parent_name, email, month,
+ * plan (+ its derived price and session count), num_children, at least one
+ * active child name, and at least one selected date.
+ */
 function checkFullRequiredFields(reg: ValidationRegistration, missing: MissingField[]): void {
   if (isBlank(reg.family.parent_name)) {
     missing.push({ field: 'parent_name', label: 'Nome do responsável' });
@@ -131,4 +120,13 @@ export function formatMissingFields(missing: MissingField[]): string {
   if (labels.length === 0) return '';
   if (labels.length === 1) return labels[0];
   return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`;
+}
+
+/**
+ * PT-PT toast for a client-side-blocked status change — "Falta" agrees with
+ * a single missing field, "Faltam" with more than one.
+ */
+export function buildBlockedToast(missing: MissingField[]): string {
+  const verb = missing.length === 1 ? 'Falta' : 'Faltam';
+  return `Não foi possível alterar o estado. ${verb}: ${formatMissingFields(missing)}.`;
 }

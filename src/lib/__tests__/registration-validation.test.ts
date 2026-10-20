@@ -1,4 +1,4 @@
-import { getMissingFields, formatMissingFields, type ValidationRegistration } from '../registration-validation';
+import { getMissingFields, formatMissingFields, buildBlockedToast, type ValidationRegistration } from '../registration-validation';
 
 function buildReg(overrides: Partial<ValidationRegistration> = {}): ValidationRegistration {
   return {
@@ -57,14 +57,14 @@ describe('getMissingFields — full check (non-silent, non-pendente target)', ()
     ]);
   });
 
-  it('reports an email missing the local part ("@.")', () => {
+  it('reports an email missing a domain after the dot ("a@.")', () => {
     const reg = buildReg({ family: { parent_name: 'Maria', email: 'a@.', phone: null } });
     expect(getMissingFields(reg, { target: 'a_pagar' })).toEqual([
       { field: 'email', label: 'Email' },
     ]);
   });
 
-  it('reports an email missing the domain name ("@.com")', () => {
+  it('reports an email missing the local part before "@" ("@.com")', () => {
     const reg = buildReg({ family: { parent_name: 'Maria', email: '@.com', phone: null } });
     expect(getMissingFields(reg, { target: 'a_pagar' })).toEqual([
       { field: 'email', label: 'Email' },
@@ -231,5 +231,20 @@ describe('formatMissingFields', () => {
 
   it('returns an empty string for no missing fields', () => {
     expect(formatMissingFields([])).toBe('');
+  });
+});
+
+describe('buildBlockedToast', () => {
+  it('uses "Falta" (singular) for exactly one missing field', () => {
+    expect(buildBlockedToast([{ field: 'parent_name', label: 'Nome do responsável' }])).toBe(
+      'Não foi possível alterar o estado. Falta: Nome do responsável.',
+    );
+  });
+
+  it('uses "Faltam" (plural) for more than one missing field', () => {
+    expect(buildBlockedToast([
+      { field: 'parent_name', label: 'Nome do responsável' },
+      { field: 'email', label: 'Email' },
+    ])).toBe('Não foi possível alterar o estado. Faltam: Nome do responsável e Email.');
   });
 });
