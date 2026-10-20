@@ -113,6 +113,20 @@ describe('getMissingFields — full check (non-silent, non-pendente target)', ()
     ]);
   });
 
+  it('reports an email missing the local part ("@.")', () => {
+    const reg = buildReg({ family: { parent_name: 'Maria', email: 'a@.', phone: null } });
+    expect(getMissingFields(reg, { target: 'a_pagar' })).toEqual([
+      { field: 'email', label: 'Email' },
+    ]);
+  });
+
+  it('reports an email missing the domain name ("@.com")', () => {
+    const reg = buildReg({ family: { parent_name: 'Maria', email: '@.com', phone: null } });
+    expect(getMissingFields(reg, { target: 'a_pagar' })).toEqual([
+      { field: 'email', label: 'Email' },
+    ]);
+  });
+
   it('reports a blank month', () => {
     const reg = buildReg({ month: '' });
     expect(getMissingFields(reg, { target: 'a_pagar' })).toEqual([
@@ -339,7 +353,7 @@ function isBlank(value: string | null | undefined): boolean {
 
 function isMissingEmail(email: string | null | undefined): boolean {
   if (isBlank(email)) return true;
-  return !/@.*\./.test(email!.trim());
+  return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email!.trim());
 }
 
 function activeChildrenWithNames(children: ValidationChild[]): ValidationChild[] {
@@ -595,7 +609,7 @@ export async function PATCH(
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/app/api/registrations/[id]/status/route.ts
+git add "src/app/api/registrations/[id]/status/route.ts"
 git commit -m "feat: block status PATCH when required data is missing"
 ```
 
@@ -603,10 +617,11 @@ git commit -m "feat: block status PATCH when required data is missing"
 
 ---
 
-## Task 3: Server enforcement — Sessão Cheia route
+## Task 3: Server enforcement — Sessão Cheia route, with its test
 
 **Files:**
 - Modify: `src/app/api/registrations/[id]/notify-sessao-cheia/route.ts`
+- Create: `src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts`
 
 **Interfaces:**
 - Consumes: `getMissingFields`, `formatMissingFields` from Task 1.
@@ -614,7 +629,129 @@ git commit -m "feat: block status PATCH when required data is missing"
 
 **Why target `'a_pagar'` here:** Sessão Cheia only ever fires while the registration is still `'pendente'` (see `StatusActions` — the button only renders for that status), but it still sends the full Make/Brevo payload. `getMissingFields` treats target `'pendente'` as never blocking, so passing the *actual* status would wrongly skip every check. Passing any of `a_pagar | lembrete | pago_confirmado | cancelado` with `silent: false` produces the identical full-field check (per Task 1's rules) — `'a_pagar'` is used here purely as that non-pendente marker, not as a real status transition.
 
-- [ ] **Step 1: Add the check**
+- [ ] **Step 1: Verify the route's current select already has everything the validator needs**
+
+Open `src/app/api/registrations/[id]/notify-sessao-cheia/route.ts` and check its existing Supabase `select(...)` string on the `registrations` query. It must include `month`, `plan`, `unit_price`, `num_sessions`, `num_children`, `selected_dates`, and `children(name, removed_at)` (extra columns alongside these, like `date_of_birth` or `total_price`, are fine and don't need removing). If any of those six are missing, add them to the select string now, before continuing — do not skip this check even though the route is expected to already have them all.
+
+- [ ] **Step 2: Write the failing test**
+
+Create `src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts`:
+
+```ts
+import { NextRequest } from 'next/server';
+
+type Row = Record<string, unknown>;
+
+function createFakeSupabase(rows: Row[]) {
+  function from(table: string) {
+    if (table !== 'registrations') throw new Error(`Unexpected table ${table}`);
+    return {
+      select() {
+        return {
+          eq(col: string, val: unknown) {
+            return {
+              async maybeSingle() {
+                const row = rows.find((r) => r[col] === val) ?? null;
+                return { data: row, error: null };
+              },
+            };
+          },
+        };
+      },
+      update(payload: Row) {
+        return {
+          async eq(col: string, val: unknown) {
+            const idx = rows.findIndex((r) => r[col] === val);
+            if (idx >= 0) rows[idx] = { ...rows[idx], ...payload };
+            return { data: null, error: null };
+          },
+        };
+      },
+    };
+  }
+  return { from };
+}
+
+jest.mock('@/lib/supabase/server', () => ({ createServerClient: jest.fn() }));
+
+import { createServerClient } from '@/lib/supabase/server';
+import { POST } from '../[id]/notify-sessao-cheia/route';
+
+function buildRequest(body: Record<string, unknown> = {}): NextRequest {
+  return new NextRequest('https://example.com/api/registrations/reg-1/notify-sessao-cheia', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+function buildRow(overrides: Row = {}): Row {
+  return {
+    id: 'reg-1',
+    month: 'julho',
+    year: 2026,
+    plan: '1 sessão (14€)',
+    unit_price: 14,
+    total_price: 14,
+    num_sessions: 1,
+    num_children: 1,
+    has_photos: false,
+    selected_dates: ['5 (manhã)'],
+    nif: null,
+    voucher_code: null,
+    notes: null,
+    family: { parent_name: 'Maria Silva', email: 'maria@example.com', phone: '912345678' },
+    children: [{ name: 'Ana', date_of_birth: null, removed_at: null }],
+    ...overrides,
+  };
+}
+
+describe('POST /api/registrations/[id]/notify-sessao-cheia — data completeness gate', () => {
+  let rows: Row[];
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    process.env.MAKE_WEBHOOK_URL = 'https://make.example.com/webhook';
+    rows = [buildRow()];
+    (createServerClient as jest.Mock).mockReturnValue(createFakeSupabase(rows));
+    fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  it('blocks with 422 and does not call the Make webhook when a required field is missing', async () => {
+    rows[0].family = { parent_name: '', email: 'maria@example.com', phone: null };
+
+    const response = await POST(buildRequest(), { params: Promise.resolve({ id: 'reg-1' }) });
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body).toEqual({
+      error: 'dados_em_falta',
+      message: 'Faltam dados: Nome do responsável.',
+      missing: [{ field: 'parent_name', label: 'Nome do responsável' }],
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(rows[0].sessao_cheia_notified_at).toBeUndefined();
+  });
+
+  it('sends the webhook and records the notification when every required field is present', async () => {
+    const response = await POST(buildRequest(), { params: Promise.resolve({ id: 'reg-1' }) });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(rows[0].sessao_cheia_notified_at).toBe(body.notified_at);
+  });
+});
+```
+
+- [ ] **Step 3: Run the test to verify the first case fails**
+
+Run: `npx jest src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts`
+Expected: the first test ("blocks with 422...") FAILS — today the route has no completeness check, so it proceeds to call the webhook and returns 200 instead of 422. The second test ("sends the webhook...") already PASSES — the route's existing success path is untouched by this task.
+
+- [ ] **Step 4: Add the check**
 
 In `src/app/api/registrations/[id]/notify-sessao-cheia/route.ts`, add the import:
 
@@ -664,15 +801,18 @@ insert:
 
 (leave the existing `pickedDate` validity check and everything after it unchanged, right below this block)
 
-- [ ] **Step 2: Run `npx tsc --noEmit` to confirm the route still type-checks**
+- [ ] **Step 5: Run the test to verify both cases pass, then type-check**
+
+Run: `npx jest src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts`
+Expected: PASS, both tests green.
 
 Run: `npx tsc --noEmit`
 Expected: no new errors.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/app/api/registrations/[id]/notify-sessao-cheia/route.ts
+git add "src/app/api/registrations/[id]/notify-sessao-cheia/route.ts" src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts
 git commit -m "feat: block Sessão Cheia notification when required data is missing"
 ```
 
@@ -685,6 +825,8 @@ git commit -m "feat: block Sessão Cheia notification when required data is miss
 
 **Interfaces:**
 - Consumes: `PATCH` from Task 2's route; mocks `createServerClient`, `createSessionEntries`/`removeSessionEntries`, `sendStatusWebhook`.
+
+This task's own subject is `status.test.ts` only — `notify-sessao-cheia.test.ts` was already written and committed in Task 3. Step 2 below runs both together as a combined regression check (per the amendment that added Task 3's test): if Task 3 already ran cleanly, this is a no-op confirmation; it only matters if something in Task 4's commit broke the other route's test.
 
 - [ ] **Step 1: Write the test file**
 
@@ -833,8 +975,8 @@ describe('PATCH /api/registrations/[id]/status — data completeness gate', () =
 
 - [ ] **Step 2: Run the tests**
 
-Run: `npx jest src/app/api/registrations/__tests__/status.test.ts`
-Expected: PASS, 4 tests green.
+Run: `npx jest src/app/api/registrations/__tests__/status.test.ts src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts`
+Expected: PASS, 6 tests green (4 from this file, 2 from Task 3's).
 
 - [ ] **Step 3: Commit**
 
@@ -1709,8 +1851,8 @@ Expected: all suites pass. Note the total test count — compare against the bas
 Run:
 ```bash
 npx eslint src/lib/registration-validation.ts src/lib/__tests__/registration-validation.test.ts \
-  src/app/api/registrations/[id]/status/route.ts src/app/api/registrations/__tests__/status.test.ts \
-  src/app/api/registrations/[id]/notify-sessao-cheia/route.ts \
+  "src/app/api/registrations/[id]/status/route.ts" src/app/api/registrations/__tests__/status.test.ts \
+  "src/app/api/registrations/[id]/notify-sessao-cheia/route.ts" src/app/api/registrations/__tests__/notify-sessao-cheia.test.ts \
   src/lib/data/registrations.ts \
   src/components/inscricoes/InlineEditField.tsx src/components/inscricoes/StatusActions.tsx src/components/inscricoes/SessaoCheiaButton.tsx src/components/inscricoes/RegistrationDetail.tsx \
   "src/app/(dashboard)/sobre/page.tsx" CLAUDE.md
@@ -1719,10 +1861,12 @@ Expected: no errors (CLAUDE.md will simply be skipped/ignored by eslint — harm
 
 - [ ] **Step 4: Write the final summary for the user**
 
-Report back, per the original spec's "FINAL SUMMARY" requirement:
-- Exact files changed (the list from Tasks 1–9).
+Report back, per the original spec's "FINAL SUMMARY" requirement, plus the two amendment follow-ups:
+- Exact files changed (the list from Tasks 1–9, including Task 3's new `notify-sessao-cheia.test.ts`).
 - The other code path that fires a Make webhook from a school-adjacent action: `src/app/api/unmatched-submissions/[id]/notify/route.ts` (the `email_nao_encontrado` notify route) — intentionally left ungated per the spec's OUT OF SCOPE note.
 - The zero-price-plan finding from Task 1: no legitimate plan ever produces `unit_price <= 0` or `num_sessions <= 0` in `parsePlan`, so no exemption was needed.
 - Test counts before (baseline from Step 2's first run) vs. after (Step 2's final run).
+- Whether a registration with zero active child rows can be fixed from the dashboard UI today (check `RegistrationDetail.tsx` and any related components for an "add child" control — report what you find, do not build one).
+- Whether a blank `month` value can be fixed from the dashboard UI today (check whether `RegistrationDetail.tsx` or elsewhere exposes an editable month field — report what you find, do not build one).
 
 No commit for this task — it's a report, not a code change.
