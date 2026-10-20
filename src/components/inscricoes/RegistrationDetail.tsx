@@ -354,13 +354,19 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
                     required
                     onSave={handleFamilySave}
                   />
-                  <Field
+                  <InlineEditField
                     label="Email"
-                    value={
-                      <a href={`mailto:${family.email}`} className="hover:underline">
-                        {family.email}
-                      </a>
+                    value={family.email}
+                    fieldName="email"
+                    required
+                    displayValue={
+                      family.email ? (
+                        <a href={`mailto:${family.email}`} className="hover:underline text-body-md text-gray-900">
+                          {family.email}
+                        </a>
+                      ) : undefined
                     }
+                    onSave={handleFamilySave}
                   />
                   <InlineEditField
                     label="Telefone"
@@ -560,7 +566,8 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
               {reg.status !== 'cancelado' ? (
                 <button
                   onClick={handleCancelRegistration}
-                  disabled={cancelling}
+                  disabled={cancelling || !!disabledReason}
+                  title={disabledReason}
                   className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-label-md border border-red-500 text-red-500 bg-transparent hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   <XCircle size={16} />

@@ -360,7 +360,7 @@ export async function notifySessaoCheia(
   const data = await res.json();
 
   if (!res.ok) {
-    return { success: false, error: data.error ?? 'Erro ao enviar notificação.' };
+    return { success: false, error: data.message ?? data.error ?? 'Erro ao enviar notificação.' };
   }
 
   return { success: true, notified_at: data.notified_at };
