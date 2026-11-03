@@ -128,12 +128,12 @@ export default function SobrePage() {
           </p>
 
           <Warning>
-            <strong>Cada mudança de estado (exceto Pendente) envia automaticamente um email à família.</strong> Confirmar sempre antes de clicar nos botões de ação.
+            <strong>Os botões de ação (Confirmar Dados, Enviar Lembrete, Confirmar Pagamento, Confirmar Inscrição e Cancelar Inscrição) enviam automaticamente um email à família.</strong> Confirmar sempre antes de clicar neles.
           </Warning>
 
           <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Voucher</h3>
           <p className="mb-3">
-            Quando uma família tem voucher e inscreve apenas <strong>uma criança</strong>, o sistema salta automaticamente de Pendente para Pago — o voucher cobre o valor total da inscrição.
+            Quando uma família tem voucher e inscreve apenas <strong>uma criança</strong>, o botão <strong>Confirmar Dados</strong> é substituído por <strong>Confirmar Inscrição</strong>, que passa a inscrição de Pendente diretamente para Pago (sem passar por A Pagar) e envia o email de confirmação — o voucher cobre o valor total da inscrição.
           </p>
           <p className="mb-3">
             Com várias crianças e voucher, o fluxo segue o caminho normal porque o voucher só cobre parcialmente o valor.
@@ -146,15 +146,31 @@ export default function SobrePage() {
 
           <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Editar detalhes</h3>
           <p className="mb-3">
-            Para editar as datas selecionadas, clicar no campo de datas da inscrição. Para alterar o estado manualmente, passar o rato sobre o estado atual — aparece um ícone de lápis que permite escolher outro estado.
+            Para editar as datas selecionadas, clicar no campo de datas da inscrição. O mesmo vale para o responsável, o telefone, o plano (&quot;Escolha&quot;) e os nomes e datas de nascimento das crianças. O email aparece apenas para consulta (clicar abre o programa de email) e não pode ser editado aqui. Para alterar o estado manualmente, clicar no estado atual (aparece um ícone de lápis ao passar o rato) e escolher outro estado.
           </p>
           <Warning>
-            A alteração manual do estado também dispara o envio de email. Usar com cuidado.
+            A alteração manual do estado <strong>não envia email</strong> à família — serve para corrigir um engano ou fazer testes. Só os botões de ação enviam email. Ao tirar uma inscrição de Pago, a criança é removida das sessões agendadas (o painel pede confirmação antes).
           </Warning>
 
           <Tip>
-            Se faltarem dados obrigatórios (por exemplo, nome do responsável, plano ou datas selecionadas), o painel da inscrição mostra um aviso a laranja e os botões de ação ficam bloqueados até esses campos serem preenchidos.
+            Se faltarem dados obrigatórios (por exemplo, nome do responsável, plano ou datas selecionadas), o painel da inscrição mostra um aviso a laranja, os campos em falta aparecem com &quot;Em falta&quot; e os botões de ação (incluindo Sessão Cheia e Cancelar Inscrição) ficam bloqueados até serem preenchidos. A alteração manual do estado também fica bloqueada e mostra uma mensagem a explicar o que falta.
           </Tip>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Cancelar inscrição</h3>
+          <p className="mb-3">
+            No canto inferior esquerdo do painel de detalhe, o botão <strong>Cancelar Inscrição</strong> pede confirmação e depois passa a inscrição para <StatusPill status="cancelado" label="Cancelado" />, enviando um email de cancelamento à família. O botão não aparece em inscrições já canceladas.
+          </p>
+
+          <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Pesquisa, re-sincronizar e eliminar</h3>
+          <p className="mb-3">
+            O campo de pesquisa por cima da lista procura pelo nome do responsável, pelo email ou pelo nome de qualquer criança da inscrição.
+          </p>
+          <p className="mb-3">
+            No canto superior direito do painel de detalhe, o ícone de setas circulares (<strong>Re-sincronizar</strong>) volta a ir buscar ao Brevo os dados da família — nome, telefone e lista de crianças — e atualiza a inscrição. O ícone do caixote do lixo elimina a inscrição de forma permanente, com os dados associados.
+          </p>
+          <p className="mb-3">
+            Se o envio de um email falhar, aparece um aviso a vermelho no painel com o botão <strong>Reenviar</strong>.
+          </p>
 
           <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Fatura enviada</h3>
           <p className="mb-3">
@@ -171,14 +187,27 @@ export default function SobrePage() {
 
           <h3 className="text-body-lg font-semibold text-gray-900 mb-3 mt-6">Sessão cheia</h3>
           <p className="mb-3">
-            Quando uma data de sessão atinge a capacidade máxima, é possível notificar famílias em estado <StatusPill status="pendente" label="Pendente" /> de que a data escolhida já não tem vagas.
+            Quando uma ou mais datas de sessão atingem a capacidade máxima, é possível avisar as famílias em estado <StatusPill status="pendente" label="Pendente" /> de que as datas escolhidas já não têm vagas.
           </p>
           <p className="mb-3">
-            No painel de detalhe da inscrição, quando o estado é Pendente, aparece um botão <strong>Sessão Cheia</strong> ao lado de &quot;Confirmar Dados&quot;. Clicar no botão envia um email à família.
+            No painel de detalhe da inscrição, quando o estado é Pendente, aparece o botão <strong>Sessão Cheia</strong> ao lado de &quot;Confirmar Dados&quot;. Clicar no botão abre sempre uma janela de confirmação antes de enviar:
           </p>
+          <ul className="list-disc list-inside flex flex-col gap-2 mb-4 pl-1">
+            <li>se a família escolheu <strong>uma só sessão</strong>, a janela pergunta se quer enviar o email a informar que essa sessão está cheia;</li>
+            <li>se escolheu <strong>várias sessões</strong>, a janela mostra a lista e é preciso assinalar uma ou mais sessões cheias — o botão Enviar só fica ativo com pelo menos uma assinalada.</li>
+          </ul>
           <p className="mb-3">
-            Após o envio, o botão transforma-se numa confirmação verde com a data de envio. Para reenviar (por exemplo, se o email falhou), clicar no ícone de repetição ao lado da confirmação.
+            É enviado <strong>um único email</strong> que menciona todas as sessões assinaladas. Se o envio falhar, a janela fica aberta com a mensagem de erro, para tentar de novo sem voltar a assinalar.
           </p>
+          <Warning>
+            Este botão <strong>não altera a inscrição</strong>: o estado e as datas ficam como estavam. A resposta da família (por exemplo, escolher outra data) tem de ser tratada manualmente, editando as datas da inscrição.
+          </Warning>
+          <p className="mb-3">
+            Após o envio, o botão transforma-se numa confirmação verde com a data de envio (não indica quais as sessões). Se mais sessões ficarem cheias mais tarde, clicar no pequeno ícone de repetição ao lado da confirmação volta a mostrar o botão <strong>Sessão Cheia</strong> — assinalar as novas sessões e enviar outro email.
+          </p>
+          <Tip>
+            Ao reenviar, assinalar apenas as sessões novas; o painel não guarda quais já foram comunicadas.
+          </Tip>
         </section>
 
         {/* 3 ── Revisão ── */}

@@ -104,3 +104,100 @@ describe('POST /api/registrations/[id]/notify-sessao-cheia — data completeness
     expect(rows[0].sessao_cheia_notified_at).toBe(body.notified_at);
   });
 });
+
+describe('POST /api/registrations/[id]/notify-sessao-cheia — picked days', () => {
+  let rows: Row[];
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    process.env.MAKE_WEBHOOK_URL = 'https://make.example.com/webhook';
+    rows = [
+      buildRow({
+        plan: '3 sessões (36€)',
+        unit_price: 12,
+        total_price: 36,
+        num_sessions: 3,
+        selected_dates: ['5 (manhã)', '12 (tarde)', '19 (manhã)'],
+      }),
+    ];
+    (createServerClient as jest.Mock).mockReturnValue(createFakeSupabase(rows));
+    fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  async function post(body: Record<string, unknown> | undefined) {
+    const response = await POST(buildRequest(body), { params: Promise.resolve({ id: 'reg-1' }) });
+    return { response, json: await response.json() };
+  }
+
+  function sentPayload(): Record<string, unknown> {
+    return JSON.parse(fetchMock.mock.calls[0][1].body);
+  }
+
+  it('sends one valid day in the single-day format with num_dias 1', async () => {
+    const { response } = await post({ dates: ['5 (manhã)'] });
+
+    expect(response.status).toBe(200);
+    expect(sentPayload()).toMatchObject({
+      status: 'sessao_cheia',
+      sessao_cheia_data: '5 de julho (manhã)',
+      sessao_cheia_num_dias: 1,
+    });
+  });
+
+  it('joins two valid days with " e "', async () => {
+    const { response } = await post({ dates: ['5 (manhã)', '12 (tarde)'] });
+
+    expect(response.status).toBe(200);
+    expect(sentPayload()).toMatchObject({
+      sessao_cheia_data: '5 de julho (manhã) e 12 de julho (tarde)',
+      sessao_cheia_num_dias: 2,
+    });
+  });
+
+  it('joins three days as a comma list ending in " e "', async () => {
+    const { response } = await post({ dates: ['5 (manhã)', '12 (tarde)', '19 (manhã)'] });
+
+    expect(response.status).toBe(200);
+    expect(sentPayload()).toMatchObject({
+      sessao_cheia_data: '5 de julho (manhã), 12 de julho (tarde) e 19 de julho (manhã)',
+      sessao_cheia_num_dias: 3,
+    });
+  });
+
+  it('rejects the whole request when one day is not on the registration', async () => {
+    const { response, json } = await post({ dates: ['5 (manhã)', '30 (tarde)'] });
+
+    expect(response.status).toBe(400);
+    expect(json.error).toBe('Data selecionada inválida.');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(rows[0].sessao_cheia_notified_at).toBeUndefined();
+  });
+
+  it('sends an empty sessao_cheia_data and num_dias 0 when no days are given', async () => {
+    const { response } = await post({ dates: [] });
+
+    expect(response.status).toBe(200);
+    expect(sentPayload()).toMatchObject({ sessao_cheia_data: '', sessao_cheia_num_dias: 0 });
+  });
+
+  it('still accepts the legacy single "date" body', async () => {
+    const { response } = await post({ date: '12 (tarde)' });
+
+    expect(response.status).toBe(200);
+    expect(sentPayload()).toMatchObject({
+      sessao_cheia_data: '12 de julho (tarde)',
+      sessao_cheia_num_dias: 1,
+    });
+  });
+
+  it('sends a duplicated day only once', async () => {
+    const { response } = await post({ dates: ['5 (manhã)', ' 5 (manhã) ', '5 (manhã)'] });
+
+    expect(response.status).toBe(200);
+    expect(sentPayload()).toMatchObject({
+      sessao_cheia_data: '5 de julho (manhã)',
+      sessao_cheia_num_dias: 1,
+    });
+  });
+});

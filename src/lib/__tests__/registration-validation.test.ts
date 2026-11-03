@@ -1,4 +1,4 @@
-import { getMissingFields, formatMissingFields, buildBlockedToast, type ValidationRegistration } from '../registration-validation';
+import { getMissingFields, formatMissingFields, joinPtList, buildBlockedToast, type ValidationRegistration } from '../registration-validation';
 
 function buildReg(overrides: Partial<ValidationRegistration> = {}): ValidationRegistration {
   return {
@@ -246,5 +246,24 @@ describe('buildBlockedToast', () => {
       { field: 'parent_name', label: 'Nome do responsável' },
       { field: 'email', label: 'Email' },
     ])).toBe('Não foi possível alterar o estado. Faltam: Nome do responsável e Email.');
+  });
+});
+
+describe('joinPtList', () => {
+  it('returns an empty string for no items', () => {
+    expect(joinPtList([])).toBe('');
+  });
+
+  it('returns a single item as-is', () => {
+    expect(joinPtList(['A'])).toBe('A');
+  });
+
+  it('joins two items with " e "', () => {
+    expect(joinPtList(['A', 'B'])).toBe('A e B');
+  });
+
+  it('joins three or more with commas and a final " e "', () => {
+    expect(joinPtList(['A', 'B', 'C'])).toBe('A, B e C');
+    expect(joinPtList(['A', 'B', 'C', 'D'])).toBe('A, B, C e D');
   });
 });

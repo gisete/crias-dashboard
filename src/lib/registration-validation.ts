@@ -115,11 +115,14 @@ export function getMissingFields(
 }
 
 /** PT-PT list format: "A", "A e B", or "A, B e C". */
+export function joinPtList(items: string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0];
+  return `${items.slice(0, -1).join(', ')} e ${items[items.length - 1]}`;
+}
+
 export function formatMissingFields(missing: MissingField[]): string {
-  const labels = missing.map((m) => m.label);
-  if (labels.length === 0) return '';
-  if (labels.length === 1) return labels[0];
-  return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`;
+  return joinPtList(missing.map((m) => m.label));
 }
 
 /**

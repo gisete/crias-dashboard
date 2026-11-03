@@ -225,14 +225,16 @@ export function RegistrationDetail({ registration: reg, onUpdate, onStatusChange
     setPendingStatus(null);
   }
 
-  async function handleSessaoCheia(date: string | null) {
-    const result = await notifySessaoCheia(reg.id, date);
+  async function handleSessaoCheia(dates: string[]): Promise<{ success: boolean; error?: string }> {
+    const result = await notifySessaoCheia(reg.id, dates);
     if (!result.success) {
-      showToast(result.error ?? 'Erro ao enviar notificação', 'error');
-      return;
+      const error = result.error ?? 'Erro ao enviar notificação';
+      showToast(error, 'error');
+      return { success: false, error };
     }
     onUpdate(reg.id, { sessao_cheia_notified_at: result.notified_at });
     showToast('Notificação de sessão cheia enviada');
+    return { success: true };
   }
 
   // On success the row disappears via the realtime subscription — nothing to

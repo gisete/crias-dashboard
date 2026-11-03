@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { buildStatusWebhookPayload, type WebhookRegistration, type WebhookFamily, type WebhookChild } from '@/lib/make-webhook';
 import { formatSelectedDate } from '@/lib/date-utils';
 import type { RegistrationStatus } from '@/types/database';
-import { getMissingFields, formatMissingFields } from '@/lib/registration-validation';
+import { getMissingFields, formatMissingFields, joinPtList } from '@/lib/registration-validation';
 
 interface FetchedRegistration extends WebhookRegistration {
   family: WebhookFamily | null;
@@ -16,15 +16,21 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  // The date is optional — a registration may have no selected dates at all,
-  // so a missing or unparseable body just means "send without naming one".
-  let pickedDate: string | null = null;
+  // The days are optional — a registration may have no selected dates at all,
+  // so a missing or unparseable body just means "send without naming any".
+  // The legacy single `date` is treated as a one-day list.
+  let requestedDates: string[] = [];
   try {
     const body = await request.json();
-    if (typeof body?.date === 'string') pickedDate = body.date;
+    if (Array.isArray(body?.dates)) {
+      requestedDates = body.dates.filter((d: unknown): d is string => typeof d === 'string');
+    } else if (typeof body?.date === 'string') {
+      requestedDates = [body.date];
+    }
   } catch {
     // No body sent.
   }
+  const pickedDates = [...new Set(requestedDates.map((d) => d.trim()).filter(Boolean))];
 
   const url = process.env.MAKE_WEBHOOK_URL;
   if (!url) {
@@ -83,9 +89,9 @@ export async function POST(
     );
   }
 
-  // Only a date the family actually picked may reach the customer email.
-  if (pickedDate && !registration.selected_dates.includes(pickedDate)) {
-    return NextResponse.json({ error: 'Data selecionada inválida' }, { status: 400 });
+  // Only dates the family actually picked may reach the customer email.
+  if (pickedDates.some((d) => !registration.selected_dates.includes(d))) {
+    return NextResponse.json({ error: 'Data selecionada inválida.' }, { status: 400 });
   }
 
   // Spread rather than extend StatusWebhookPayload — the builder is shared
@@ -98,7 +104,8 @@ export async function POST(
       (registration.children ?? []).filter((c) => !c.removed_at),
       'sessao_cheia' as RegistrationStatus,
     ),
-    sessao_cheia_data: pickedDate ? formatSelectedDate(pickedDate, registration.month) : '',
+    sessao_cheia_data: joinPtList(pickedDates.map((d) => formatSelectedDate(d, registration.month))),
+    sessao_cheia_num_dias: pickedDates.length,
   };
 
   let response: Response;

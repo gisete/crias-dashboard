@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Envelope, CircleNotch, ArrowClockwise, Check } from '@phosphor-icons/react';
 import { formatSelectedDate } from '@/lib/date-utils';
+import { getSessaoCheiaMode } from '@/lib/sessao-cheia';
 
 interface Props {
   selectedDates: string[];
   month: string;
   sessaoCheiaNotifiedAt: string | null;
-  onSessaoCheia: (date: string | null) => Promise<void>;
+  onSessaoCheia: (dates: string[]) => Promise<{ success: boolean; error?: string }>;
   disabled?: boolean;
   title?: string;
 }
@@ -30,7 +31,10 @@ export function SessaoCheiaButton({
   const [loading, setLoading] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const mode = getSessaoCheiaMode(selectedDates);
 
   useEffect(() => {
     if (!showModal) return;
@@ -41,28 +45,45 @@ export function SessaoCheiaButton({
     return () => document.removeEventListener('keydown', onEscape);
   }, [showModal, loading]);
 
-  async function send(date: string | null) {
+  async function send(dates: string[]) {
     setLoading(true);
+    setError(null);
     try {
-      await onSessaoCheia(date);
+      const result = await onSessaoCheia(dates);
+      if (!result.success) {
+        // Keep the modal open with the ticks so the school can retry.
+        setError(result.error ?? 'Erro ao enviar notificação');
+        return;
+      }
       setShowModal(false);
-      setPicked(null);
+      setPicked([]);
       setShowResendButton(false);
+    } catch {
+      setError('Erro ao enviar notificação');
     } finally {
       setLoading(false);
     }
   }
 
-  // With a single date there is nothing to choose, so skip straight to the
-  // send — this covers every "1 sessão" plan.
+  // Only the no-dates case skips the modal — the school always confirms
+  // which sessions are full before an email goes out.
   function handleClick() {
-    if (selectedDates.length <= 1) {
-      send(selectedDates[0] ?? null);
+    if (mode === 'none') {
+      send([]);
       return;
     }
-    setPicked(null);
+    setPicked([]);
+    setError(null);
     setShowModal(true);
   }
+
+  function toggle(date: string) {
+    setPicked((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]));
+  }
+
+  // Send in the order the dates appear on the registration, not tick order.
+  const orderedPicked = selectedDates.filter((d) => picked.includes(d));
+  const canSend = mode === 'confirm' || orderedPicked.length > 0;
 
   if (sessaoCheiaNotifiedAt && !showResendButton) {
     return (
@@ -106,30 +127,43 @@ export function SessaoCheiaButton({
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-headline-md text-gray-900 mb-3">Sessão cheia</h2>
-            <p className="text-body-md text-gray-600 mb-6">Qual sessão está cheia?</p>
+            {mode === 'confirm' ? (
+              <p className="text-body-md text-gray-600 mb-6">
+                Enviar email a informar a família que a sessão de {formatSelectedDate(selectedDates[0], month)} está cheia?
+              </p>
+            ) : (
+              <>
+                <p className="text-body-md text-gray-600 mb-6">Quais as sessões que estão cheias?</p>
 
-            <div className="flex flex-col gap-1 mb-8">
-              {/* Keyed by the entry, not the day — the same day can appear
-                  twice with different slots. */}
-              {selectedDates.map((date) => (
-                <label
-                  key={date}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name="sessao-cheia-data"
-                    value={date}
-                    checked={picked === date}
-                    onChange={() => setPicked(date)}
-                    className="accent-primary"
-                  />
-                  <span className="text-body-md text-gray-900">
-                    {formatSelectedDate(date, month)}
-                  </span>
-                </label>
-              ))}
-            </div>
+                <div className="flex flex-col gap-1 mb-8">
+                  {/* Keyed by the entry, not the day — the same day can appear
+                      twice with different slots. */}
+                  {selectedDates.map((date) => (
+                    <label
+                      key={date}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        name="sessao-cheia-data"
+                        value={date}
+                        checked={picked.includes(date)}
+                        onChange={() => toggle(date)}
+                        disabled={loading}
+                        className="accent-primary"
+                      />
+                      <span className="text-body-md text-gray-900">
+                        {formatSelectedDate(date, month)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {error && (
+              <p role="alert" className="text-label-sm text-red-500 mb-4">{error}</p>
+            )}
 
             <div className="flex gap-3 justify-end">
               <button
@@ -140,11 +174,11 @@ export function SessaoCheiaButton({
                 Cancelar
               </button>
               <button
-                onClick={() => picked && send(picked)}
-                disabled={loading || !picked}
+                onClick={() => send(mode === 'confirm' ? selectedDates : orderedPicked)}
+                disabled={loading || !canSend}
                 className="px-5 py-2.5 rounded-xl text-label-md bg-on-primary-fixed text-white hover:bg-on-primary-fixed/90 transition-colors disabled:opacity-50"
               >
-                {loading ? 'A enviar...' : 'Enviar'}
+                {loading ? <CircleNotch size={16} className="animate-spin" /> : 'Enviar'}
               </button>
             </div>
           </div>

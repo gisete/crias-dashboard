@@ -350,12 +350,12 @@ export async function recomputeSessionValues(id: string): Promise<{ success: boo
 
 export async function notifySessaoCheia(
   registrationId: string,
-  date: string | null
+  dates: string[]
 ): Promise<{ success: boolean; notified_at?: string; error?: string }> {
   const res = await fetch(`/api/registrations/${registrationId}/notify-sessao-cheia`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ date }),
+    body: JSON.stringify({ dates }),
   });
   const data = await res.json();
 

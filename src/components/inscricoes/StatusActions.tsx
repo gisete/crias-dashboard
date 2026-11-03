@@ -13,7 +13,7 @@ interface Props {
   selectedDates: string[];
   month: string;
   sessaoCheiaNotifiedAt: string | null;
-  onSessaoCheia: (date: string | null) => Promise<void>;
+  onSessaoCheia: (dates: string[]) => Promise<{ success: boolean; error?: string }>;
   disabledReason?: string;
 }
 
